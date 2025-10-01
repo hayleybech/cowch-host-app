@@ -9,7 +9,7 @@ Route::get('/', function () {
 
 Route::get('/cowwwch', function () {
     return Inertia::render('games/snakes');
-})->name('home');
+})->name('snake');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
