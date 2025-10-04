@@ -1,11 +1,9 @@
-import { Apple } from '@/pages/games/board';
+import { Apple, Piece } from '@/pages/games/board';
 import { appleRate, cols, rows, tick } from '@/pages/games/config';
 import { chooseStartPos, CowHead, CowMiddle, CowTail, Direction, move, Player } from '@/pages/games/cow';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-class Piece {}
 
 type GameState = {
     players: Player[];
@@ -199,15 +197,6 @@ export const Snakes = () => {
                                 <div>{player.score}</div>
                             </li>
                         ))}
-                        {/*{username && (*/}
-                        {/*    <li*/}
-                        {/*        key={username}*/}
-                        {/*        className="flex justify-between gap-8"*/}
-                        {/*    >*/}
-                        {/*        <div className="font-extrabold">{username}</div>*/}
-                        {/*        <div>{0}</div>*/}
-                        {/*    </li>*/}
-                        {/*)}*/}
                     </ul>
                 </div>
 
