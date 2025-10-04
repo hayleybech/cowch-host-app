@@ -1,61 +1,16 @@
+import { Apple } from '@/pages/games/board';
+import { appleRate, cols, rows, tick } from '@/pages/games/config';
+import { chooseStartPos, CowHead, CowMiddle, CowTail, Direction, move, Player } from '@/pages/games/cow';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type Direction = 'up' | 'down' | 'right' | 'left';
-
-function clamp(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(value, max));
-}
-
-function getRandomNumber(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-const rows = 20;
-const cols = 20;
+class Piece {}
 
 type GameState = {
     players: Player[];
     cells: (Piece | null)[][];
-};
-
-type Player = {
-    id: string;
-    username: string;
-    headPiece?: CowHead;
-    pos?: CowPos;
-};
-
-type CowPos = {
-    x: number;
-    y: number;
-    dir: Direction; // The direction the piece is queued to move on its NEXT frame
-};
-
-type Piece = CowHead | CowMiddle | CowTail;
-
-type CowHead = {
-    type: 'head';
-
-    // references back up to Player. could be replaced with a direct reference to Player.
-    playerId: string;
-
-    pos?: CowPos;
-
-    // Linked list of bits of cow. Thanks, bachelor degree!
-    // @todo narrow to exclude CowHead
-    nextPiece?: Piece;
-};
-type CowMiddle = {
-    type: 'middle';
-    pos: CowPos;
-    nextPiece?: Piece;
-};
-type CowTail = {
-    type: 'tail';
-    pos: CowPos;
-    nextPiece?: Piece; // @todo narrow exclude nextPiece on CowTail
+    ticksSinceApple: number;
 };
 
 type Action =
@@ -80,54 +35,6 @@ const generateGrid = () => {
     return cellsTemp;
 };
 
-const chooseStartPos = () => ({
-    x: getRandomNumber(1, cols - 2),
-    y: getRandomNumber(1, rows - 2),
-});
-
-const move = (cells: (Piece | null)[][], piece?: Piece, queueDir?: Direction) => {
-    if (!piece || !piece.pos) {
-        return piece;
-    }
-
-    const newPiece = { ...piece };
-    newPiece.pos = shiftPos(newPiece.pos as CowPos);
-
-    // Remove from old cell, put in new cell
-    cells[piece.pos.y][piece.pos.x] = null;
-    cells[newPiece.pos.y][newPiece.pos.x] = newPiece;
-
-    // Queue the piece to move in the direction its parent piece just moved
-    newPiece.pos.dir = queueDir ?? newPiece.pos.dir; // If undefined, assume headPiece and keep moving straight
-
-    // Recursively move the next piece(s)
-    newPiece.nextPiece = move(cells, newPiece.nextPiece, piece.pos.dir);
-    return newPiece;
-};
-
-const shiftPos = (pos: CowPos): CowPos => {
-    const newPos = {
-        x: pos.x,
-        y: pos.y,
-        dir: pos.dir,
-    };
-    if (pos.dir === 'up') {
-        newPos.y = clamp(pos.y - 1, 0, cols - 1);
-        return newPos;
-    }
-    if (pos.dir === 'right') {
-        newPos.x = clamp(pos.x + 1, 0, rows - 1);
-        return newPos;
-    }
-    if (pos.dir === 'down') {
-        newPos.y = clamp(pos.y + 1, 0, cols - 1);
-        return newPos;
-    }
-
-    newPos.x = clamp(pos.x - 1, 0, rows - 1);
-    return newPos;
-};
-
 export const Snakes = () => {
     const [peerId, setPeerId] = useState<string>();
     const peerRef = useRef<Peer>(null);
@@ -135,6 +42,7 @@ export const Snakes = () => {
     const [gameState, setGameState] = useState<GameState>(() => ({
         players: [],
         cells: generateGrid(),
+        ticksSinceApple: 0,
     }));
 
     const addPlayer = useCallback((id: string, username: string) => {
@@ -175,6 +83,7 @@ export const Snakes = () => {
             tempCells[cowTail.pos.y][cowTail.pos.x] = { ...cowTail };
 
             return {
+                ...prev,
                 players: [...prev.players, { id, username, headPiece: head, pos: head.pos }],
                 cells: tempCells,
             };
@@ -206,6 +115,7 @@ export const Snakes = () => {
                         player.headPiece.pos.dir = action.payload;
 
                         return {
+                            ...prev,
                             players: temp,
                             cells: prev.cells,
                         };
@@ -222,21 +132,39 @@ export const Snakes = () => {
         };
     }, []);
 
-    const tick = 800;
     useEffect(() => {
         // tick
         setInterval(() => {
             setGameState((prev) => {
-                const tempCells = [...prev.cells];
-                const tempPlayers = prev.players.map((player) => {
+                // Move all players
+                const cells = [...prev.cells];
+                const players = prev.players.map((player) => {
                     const tempPlayer = { ...player };
-                    tempPlayer.headPiece = move(tempCells, player.headPiece) as CowHead | undefined;
+                    tempPlayer.headPiece = move(cells, player.headPiece) as CowHead | undefined;
                     return tempPlayer;
                 });
 
+                // Spawn apples
+                let ticksSinceApple = prev.ticksSinceApple;
+                console.log({ ticksSinceApple, appleRate });
+                if (prev.ticksSinceApple > appleRate) {
+                    console.log('appling');
+                    const apple: Apple = {
+                        type: 'apple',
+                        ...chooseStartPos(),
+                    };
+                    cells[apple.y][apple.x] = { ...apple };
+                    ticksSinceApple = 0;
+                } else {
+                    ticksSinceApple++;
+                }
+
+                // Update game state
                 return {
-                    players: tempPlayers,
-                    cells: tempCells,
+                    ...prev,
+                    players: players,
+                    cells,
+                    ticksSinceApple,
                 };
             });
         }, tick);
@@ -288,12 +216,17 @@ export const Snakes = () => {
                                 >
                                     {/* new mp logic*/}
                                     {piece?.type === 'head' && (
-                                        <div className="flex h-10 w-10 items-center justify-center bg-purple-500 text-white">
+                                        <div className="flex h-10 w-10 items-center justify-center bg-amber-950 text-white">
                                             H
                                         </div>
                                     )}
                                     {piece?.type === 'middle' && 'M'}
                                     {piece?.type === 'tail' && 'T'}
+                                    {piece?.type === 'apple' && (
+                                        <div className="flex h-10 w-10 items-center justify-center bg-red-800 text-white">
+                                            A
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
