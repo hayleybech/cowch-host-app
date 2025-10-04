@@ -3,7 +3,7 @@ import { appleRate, cols, rows, tick } from '@/pages/games/config';
 import { chooseStartPos, CowHead, CowMiddle, CowTail, Direction, move, Player } from '@/pages/games/cow';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 
 type GameState = {
     players: Player[];
@@ -11,7 +11,7 @@ type GameState = {
     ticksSinceApple: number;
 };
 
-type Action =
+type PlayerAction =
     | {
           type: 'join';
           payload: string;
@@ -33,17 +33,14 @@ const generateGrid = () => {
     return cellsTemp;
 };
 
-export const Snakes = () => {
-    const [peerId, setPeerId] = useState<string>();
-    const peerRef = useRef<Peer>(null);
+type GameAction =
+    | { type: 'ADD_PLAYER'; payload: { playerId: string; username: string } }
+    | { type: 'CHANGE_DIRECTION'; payload: { playerId: string; direction: Direction } }
+    | { type: 'MOVE_PLAYERS' }
+    | { type: 'SPAWN_APPLE' };
 
-    const [gameState, setGameState] = useState<GameState>(() => ({
-        players: [],
-        cells: generateGrid(),
-        ticksSinceApple: 0,
-    }));
-
-    const addPlayer = useCallback((id: string, username: string) => {
+function reducer(state: GameState, action: GameAction): GameState {
+    if (action.type === 'ADD_PLAYER') {
         const startXy = chooseStartPos();
 
         const cowTail: CowTail = {
@@ -75,27 +72,88 @@ export const Snakes = () => {
             nextPiece: cowMiddle,
         };
         const player: Player = {
-            id,
-            username,
+            id: action.payload.playerId,
+            username: action.payload.username,
             headPiece: head,
             pos: head.pos,
             score: 0,
         };
         head.player = player;
 
-        setGameState((prev) => {
-            const tempCells = [...prev.cells];
-            tempCells[startXy.y][startXy.x] = head;
-            tempCells[cowMiddle.pos.y][cowMiddle.pos.x] = { ...cowMiddle };
-            tempCells[cowTail.pos.y][cowTail.pos.x] = { ...cowTail };
+        const tempCells = [...state.cells];
+        tempCells[startXy.y][startXy.x] = head;
+        tempCells[cowMiddle.pos.y][cowMiddle.pos.x] = { ...cowMiddle };
+        tempCells[cowTail.pos.y][cowTail.pos.x] = { ...cowTail };
 
-            return {
-                ...prev,
-                players: [...prev.players, player],
-                cells: tempCells,
-            };
+        return {
+            ...state,
+            players: [...state.players, player],
+            cells: tempCells,
+        };
+    }
+
+    if (action.type === 'CHANGE_DIRECTION') {
+        const temp = [...state.players];
+        const player = temp.find((player) => player.id == action.payload.playerId);
+
+        if (!player || !player.headPiece || !player.headPiece.pos) {
+            return state;
+        }
+        player.headPiece.pos.dir = action.payload.direction;
+
+        return {
+            ...state,
+            players: temp,
+            cells: state.cells,
+        };
+    }
+
+    if (action.type === 'MOVE_PLAYERS') {
+        const cells = [...state.cells];
+        const players = state.players.map((player) => {
+            const tempPlayer = { ...player };
+            tempPlayer.headPiece = move(cells, player.headPiece) as CowHead | undefined;
+            tempPlayer.score = tempPlayer!.headPiece!.player.score;
+            return tempPlayer;
         });
-    }, []);
+
+        return { ...state, players, cells };
+    }
+
+    if (action.type === 'SPAWN_APPLE') {
+        const cells = [...state.cells];
+        let ticksSinceApple = state.ticksSinceApple;
+        if (state.ticksSinceApple > appleRate) {
+            const apple: Apple = {
+                type: 'apple',
+                ...chooseStartPos(),
+            };
+            cells[apple.y][apple.x] = { ...apple };
+            ticksSinceApple = 0;
+        } else {
+            ticksSinceApple++;
+        }
+
+        // Update game state
+        return {
+            ...state,
+            cells,
+            ticksSinceApple,
+        };
+    }
+
+    return state;
+}
+
+export const Snakes = () => {
+    const [peerId, setPeerId] = useState<string>();
+    const peerRef = useRef<Peer>(null);
+
+    const [gameState, dispatch] = useReducer(reducer, {
+        players: [],
+        cells: generateGrid(),
+        ticksSinceApple: 0,
+    });
 
     useEffect(() => {
         const peer = new Peer('cowch-1');
@@ -107,25 +165,14 @@ export const Snakes = () => {
 
         peer.on('connection', function (conn: DataConnection) {
             conn.on('data', function (data: unknown) {
-                const action = data as Action;
+                const action = data as PlayerAction;
                 if (action.type === 'join') {
-                    addPlayer(conn.peer, action.payload);
+                    dispatch({ type: 'ADD_PLAYER', payload: { playerId: conn.peer, username: action.payload } });
                 }
                 if (action.type === 'move') {
-                    setGameState((prev) => {
-                        const temp = [...prev.players];
-                        const player = temp.find((player) => player.id == conn.peer);
-
-                        if (!player || !player.headPiece || !player.headPiece.pos) {
-                            return prev;
-                        }
-                        player.headPiece.pos.dir = action.payload;
-
-                        return {
-                            ...prev,
-                            players: temp,
-                            cells: prev.cells,
-                        };
+                    dispatch({
+                        type: 'CHANGE_DIRECTION',
+                        payload: { playerId: conn.peer, direction: action.payload },
                     });
                 }
             });
@@ -142,39 +189,8 @@ export const Snakes = () => {
     useEffect(() => {
         // tick
         setInterval(() => {
-            setGameState((prev) => {
-                // Move all players
-                const cells = [...prev.cells];
-                const players = prev.players.map((player) => {
-                    const tempPlayer = { ...player };
-                    tempPlayer.headPiece = move(cells, player.headPiece) as CowHead | undefined;
-                    tempPlayer.score = tempPlayer!.headPiece!.player.score;
-                    return tempPlayer;
-                });
-
-                // Spawn apples
-                let ticksSinceApple = prev.ticksSinceApple;
-                console.log({ ticksSinceApple, appleRate });
-                if (prev.ticksSinceApple > appleRate) {
-                    console.log('appling');
-                    const apple: Apple = {
-                        type: 'apple',
-                        ...chooseStartPos(),
-                    };
-                    cells[apple.y][apple.x] = { ...apple };
-                    ticksSinceApple = 0;
-                } else {
-                    ticksSinceApple++;
-                }
-
-                // Update game state
-                return {
-                    ...prev,
-                    players: players,
-                    cells,
-                    ticksSinceApple,
-                };
-            });
+            dispatch({ type: 'MOVE_PLAYERS' });
+            dispatch({ type: 'SPAWN_APPLE' });
         }, tick);
     }, []);
 
