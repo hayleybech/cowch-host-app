@@ -4,11 +4,13 @@ import { chooseStartPos, CowHead, CowMiddle, CowTail, Direction, move, Player } 
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
 import { useEffect, useReducer, useRef, useState } from 'react';
+import { useInterval } from 'react-use';
 
 type GameState = {
     players: Player[];
     cells: (Piece | null)[][];
     ticksSinceApple: number;
+    isPaused: boolean;
 };
 
 type PlayerAction =
@@ -37,7 +39,8 @@ type GameAction =
     | { type: 'ADD_PLAYER'; payload: { playerId: string; username: string } }
     | { type: 'CHANGE_DIRECTION'; payload: { playerId: string; direction: Direction } }
     | { type: 'MOVE_PLAYERS' }
-    | { type: 'SPAWN_APPLE' };
+    | { type: 'SPAWN_APPLE' }
+    | { type: 'TOGGLE_PAUSE' };
 
 function reducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'ADD_PLAYER') {
@@ -142,6 +145,13 @@ function reducer(state: GameState, action: GameAction): GameState {
         };
     }
 
+    if (action.type === 'TOGGLE_PAUSE') {
+        return {
+            ...state,
+            isPaused: !state.isPaused,
+        };
+    }
+
     return state;
 }
 
@@ -153,6 +163,7 @@ export const Snakes = () => {
         players: [],
         cells: generateGrid(),
         ticksSinceApple: 0,
+        isPaused: true,
     });
 
     useEffect(() => {
@@ -186,13 +197,13 @@ export const Snakes = () => {
         };
     }, []);
 
-    useEffect(() => {
-        // tick
-        setInterval(() => {
+    useInterval(
+        () => {
             dispatch({ type: 'MOVE_PLAYERS' });
             dispatch({ type: 'SPAWN_APPLE' });
-        }, tick);
-    }, []);
+        },
+        gameState.isPaused ? null : tick,
+    );
 
     return (
         <div className="flex flex-col bg-[#FDFDFC] p-6 text-[#1b1b18] lg:p-8">
@@ -203,7 +214,17 @@ export const Snakes = () => {
             </header>
 
             <div className="flex w-full justify-between">
-                <p className="text-[#706f6c]] mb-8">Join code: {peerId}</p>
+                <div>
+                    <p className="text-[#706f6c]] mb-8">Join code: {peerId}</p>
+                    <p>
+                        <button
+                            className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
+                            onClick={() => dispatch({ type: 'TOGGLE_PAUSE' })}
+                        >
+                            {gameState.isPaused ? 'Unpause' : 'Pause'}
+                        </button>
+                    </p>
+                </div>
                 {/* Scoreboard */}
                 <div>
                     <ul>
