@@ -7,6 +7,7 @@ export type Player = {
     username: string;
     headPiece?: CowHead;
     pos?: CowPos;
+    score: number;
 };
 type CowPos = {
     x: number;
@@ -17,8 +18,7 @@ export type CowPiece = CowHead | CowMiddle | CowTail;
 export type CowHead = {
     type: 'head';
 
-    // references back up to Player. could be replaced with a direct reference to Player.
-    playerId: string;
+    player: Player;
 
     pos?: CowPos;
 
@@ -63,6 +63,7 @@ export const move = (cells: (Piece | null)[][], piece?: CowPiece, queueDir?: Dir
         newPiece.nextPiece = newMiddle;
         cells[piece.pos.y][piece.pos.x] = newMiddle;
         grew = true;
+        newPiece.player.score++;
     }
 
     // Put in new cell

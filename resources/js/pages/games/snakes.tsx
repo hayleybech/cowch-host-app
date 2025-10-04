@@ -67,7 +67,8 @@ export const Snakes = () => {
         };
         const head: CowHead = {
             type: 'head',
-            playerId: id,
+            // @ts-expect-error will be immediately set on the next line, don't want to broaden type
+            player: undefined,
             pos: {
                 x: startXy.x,
                 y: startXy.y,
@@ -75,6 +76,14 @@ export const Snakes = () => {
             },
             nextPiece: cowMiddle,
         };
+        const player: Player = {
+            id,
+            username,
+            headPiece: head,
+            pos: head.pos,
+            score: 0,
+        };
+        head.player = player;
 
         setGameState((prev) => {
             const tempCells = [...prev.cells];
@@ -84,7 +93,7 @@ export const Snakes = () => {
 
             return {
                 ...prev,
-                players: [...prev.players, { id, username, headPiece: head, pos: head.pos }],
+                players: [...prev.players, player],
                 cells: tempCells,
             };
         });
@@ -141,6 +150,7 @@ export const Snakes = () => {
                 const players = prev.players.map((player) => {
                     const tempPlayer = { ...player };
                     tempPlayer.headPiece = move(cells, player.headPiece) as CowHead | undefined;
+                    tempPlayer.score = tempPlayer!.headPiece!.player.score;
                     return tempPlayer;
                 });
 
@@ -186,7 +196,7 @@ export const Snakes = () => {
                         {gameState.players.map((player) => (
                             <li key={player.id} className="flex justify-between gap-8">
                                 <div className="font-extrabold">{player.username}</div>
-                                <div>{0}</div>
+                                <div>{player.score}</div>
                             </li>
                         ))}
                         {/*{username && (*/}
