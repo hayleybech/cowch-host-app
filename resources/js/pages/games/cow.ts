@@ -2,13 +2,21 @@ import { clamp, getRandomNumber } from '@/lib/utils';
 import { Apple, Position } from '@/pages/games/board';
 import { config } from './config';
 
-export type Player = {
+export type AlivePlayer = {
     id: string;
     username: string;
-    headPiece?: CowHead;
     score: number;
-    isAlive: boolean;
+    isAlive: true;
+    headPiece: CowHead;
 };
+export type DeadPlayer = {
+    id: string;
+    username: string;
+    score: number;
+    isAlive: false;
+};
+export type Player = AlivePlayer | DeadPlayer;
+
 export type CowPos = {
     x: number;
     y: number;
@@ -23,30 +31,26 @@ export type CowHead = {
 
     // Linked list of bits of cow. Thanks, bachelor degree!
     // @todo narrow to exclude CowHead
-    nextPiece?: CowPiece;
+    nextPiece: CowPiece;
 };
 export type CowMiddle = {
     type: 'middle';
     pos: Position;
     dir: Direction;
-    nextPiece?: CowPiece;
+    nextPiece: CowPiece;
 };
 export type CowTail = {
     type: 'tail';
     pos: Position;
     dir: Direction;
-    nextPiece?: CowPiece; // @todo narrow exclude nextPiece on CowTail
+    nextPiece: undefined;
 };
 export const chooseStartPos = (): Position => ({
     x: getRandomNumber(2, config.cols - 2), // Ensure tail doesn't spawn off left edge (all players spawn facing right)
     y: getRandomNumber(1, config.rows - 2),
 });
 
-export const move = (apples: Apple[], piece?: CowPiece, queueDir?: Direction) => {
-    if (!piece || !piece.pos) {
-        return piece;
-    }
-
+export const move = <T extends CowPiece>(apples: Apple[], piece: T, queueDir?: Direction): T => {
     const newPiece = { ...piece };
     newPiece.pos = shiftPos(newPiece.pos, newPiece.dir);
 
@@ -54,7 +58,9 @@ export const move = (apples: Apple[], piece?: CowPiece, queueDir?: Direction) =>
     newPiece.dir = queueDir ?? newPiece.dir; // If undefined, assume headPiece and keep moving straight
 
     // Recursively move the next piece(s)
-    newPiece.nextPiece = move(apples, newPiece.nextPiece, piece.dir);
+    if (newPiece.type !== 'tail') {
+        newPiece.nextPiece = move(apples, newPiece.nextPiece, piece.dir);
+    }
 
     return newPiece;
 };
@@ -97,12 +103,12 @@ export function getSecondLastPiece(piece: CowPiece, prevPiece: CowPiece): CowPie
     return getSecondLastPiece(piece.nextPiece, piece);
 }
 
-export function playerHasCollidedWithAnyPlayer(playerA: Player, players: Player[]): boolean {
+export function playerHasCollidedWithAnyPlayer(playerA: AlivePlayer, players: Player[]): boolean {
     return players.some((playerB) => playerHasCollidedWithPlayer(playerA, playerB));
 }
 
-function playerHasCollidedWithPlayer(playerA: Player, playerB: Player): boolean {
-    if (!playerA.headPiece || !playerA.headPiece.pos || !playerB.headPiece || !playerB.headPiece.pos) {
+function playerHasCollidedWithPlayer(playerA: AlivePlayer, playerB: Player): boolean {
+    if (!isAlive(playerA) || !isAlive(playerB)) {
         return false;
     }
     if (playerA.headPiece !== playerB.headPiece && posIsEqual(playerA.headPiece.pos, playerB.headPiece.pos)) {
@@ -130,15 +136,19 @@ function playerHasCollidedWithPiece(playerAHeadPos: Position, piece: CowPiece): 
     return playerHasCollidedWithPiece(playerAHeadPos, piece.nextPiece);
 }
 
-export function playerHasCollidedWithAnyWall(player: Player): boolean {
+export function playerHasCollidedWithAnyWall(player: AlivePlayer): boolean {
     return (
-        (player.headPiece?.pos?.x as number) < 0 ||
-        (player.headPiece?.pos?.x as number) >= config.cols ||
-        (player.headPiece?.pos?.y as number) < 0 ||
-        (player.headPiece?.pos?.y as number) > config.rows
+        (player.headPiece.pos.x as number) < 0 ||
+        (player.headPiece.pos.x as number) >= config.cols ||
+        (player.headPiece.pos.y as number) < 0 ||
+        (player.headPiece.pos.y as number) > config.rows
     );
 }
 
 function posIsEqual(posA: Position, posB: Position): boolean {
     return posA.x === posB.x && posA.y === posB.y;
+}
+
+export function isAlive(player: Player): player is AlivePlayer {
+    return player.isAlive;
 }

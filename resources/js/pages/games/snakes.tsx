@@ -1,5 +1,6 @@
 import { Apple, Piece, Position } from '@/pages/games/board';
 import {
+    AlivePlayer,
     chooseStartPos,
     CowHead,
     CowMiddle,
@@ -7,6 +8,7 @@ import {
     CowTail,
     Direction,
     getSecondLastPiece,
+    isAlive,
     move,
     Player,
     playerHasCollidedWithAnyApple,
@@ -68,6 +70,7 @@ function reducer(state: GameState, action: GameAction): GameState {
                 y: startXy.y,
             },
             dir: 'right',
+            nextPiece: undefined,
         };
         const cowMiddle: CowMiddle = {
             type: 'middle',
@@ -100,7 +103,7 @@ function reducer(state: GameState, action: GameAction): GameState {
 
     if (action.type === 'CHANGE_DIRECTION') {
         const player = state.players.find((player) => player.id == action.payload.playerId);
-        if (!player?.isAlive) {
+        if (!player || !isAlive(player)) {
             return state;
         }
 
@@ -167,19 +170,19 @@ function reducer(state: GameState, action: GameAction): GameState {
 
 function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
     // Calculate new player positions
-    const players = state.players.map((player) => {
+    let players = state.players.map((player) => {
         if (!player.isAlive) {
             return player;
         }
 
         const tempPlayer = { ...player };
-        tempPlayer.headPiece = move(state.apples, player.headPiece) as CowHead | undefined;
+        tempPlayer.headPiece = move(state.apples, player.headPiece);
         return tempPlayer;
     });
 
     // Check collisions with apples
-    players.map((player) => {
-        if (!player.isAlive || !player.headPiece || !player.headPiece.pos) {
+    players = players.map((player) => {
+        if (!isAlive(player)) {
             return player;
         }
 
@@ -190,11 +193,8 @@ function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
             dispatch({ type: 'REMOVE_APPLE', payload: { x: appleCollided.pos.x, y: appleCollided.pos.y } });
 
             // Grow tail
-            const playerOld = state.players.find((playerA) => playerA.id === player.id) as Player;
-            const slpOld = getSecondLastPiece(
-                (playerOld.headPiece as CowPiece).nextPiece as CowPiece,
-                playerOld.headPiece as CowPiece,
-            );
+            const playerOld = state.players.find((playerA) => playerA.id === player.id) as AlivePlayer;
+            const slpOld = getSecondLastPiece(playerOld.headPiece.nextPiece, playerOld.headPiece);
             getSecondLastPiece(player.headPiece.nextPiece as CowPiece, player.headPiece).nextPiece = {
                 type: 'middle',
                 pos: { ...(slpOld.pos as Position) },
@@ -203,6 +203,7 @@ function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
                     type: 'tail',
                     pos: { ...(slpOld.nextPiece?.pos as Position) },
                     dir: slpOld.nextPiece?.dir as Direction,
+                    nextPiece: undefined,
                 },
             };
             player.score++;
@@ -211,14 +212,17 @@ function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
     });
 
     // Check collisions with players and walls
-    players.map((player) => {
+    players = players.map((player) => {
         if (!player.isAlive) {
             return player;
         }
 
         if (playerHasCollidedWithAnyPlayer(player, players) || playerHasCollidedWithAnyWall(player)) {
-            player.isAlive = false;
-            player.headPiece = undefined; // @todo improve types (should be null?)
+            return {
+                ...player,
+                isAlive: false,
+                headPiece: undefined,
+            };
         }
 
         return player;
@@ -308,9 +312,11 @@ export const Snakes = () => {
                                     {player.username} {!player.isAlive && '(Dead)'}
                                 </div>
                                 <div>{player.score}</div>
-                                <div>
-                                    X: {player.headPiece?.pos?.x}, Y: {player.headPiece?.pos?.y}
-                                </div>
+                                {isAlive(player) && (
+                                    <div>
+                                        X: {player.headPiece.pos.x}, Y: {player.headPiece.pos.y}
+                                    </div>
+                                )}
                             </li>
                         ))}
                     </ul>
@@ -336,7 +342,7 @@ export const Snakes = () => {
                         </div>
                     ))}
                     {gameState.players.map(
-                        (player) => !!player.headPiece && <RenderCowPiece key={player.id} piece={player.headPiece} />,
+                        (player) => isAlive(player) && <RenderCowPiece key={player.id} piece={player.headPiece} />,
                     )}
                     {gameState.apples.map((apple) => (
                         <RenderApple apple={apple} key={`apple-[${apple.pos.x},${apple.pos.y}]`} />
@@ -350,13 +356,9 @@ export const Snakes = () => {
 export default Snakes;
 
 const RenderCowPiece = (props: { piece: CowPiece }) => {
-    if (!props.piece.pos) {
-        return null;
-    }
-
     return (
         <>
-            {props.piece?.type === 'head' && (
+            {props.piece.type === 'head' && (
                 <div
                     className="absolute flex items-center justify-center bg-amber-950 text-white"
                     style={{
@@ -370,7 +372,7 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
                 </div>
             )}
 
-            {props.piece?.type === 'middle' && (
+            {props.piece.type === 'middle' && (
                 <div
                     className="absolute flex items-center justify-center bg-neutral-500 text-black"
                     style={{
@@ -386,7 +388,7 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
 
             {!!props.piece.nextPiece && <RenderCowPiece piece={props.piece.nextPiece} />}
 
-            {props.piece?.type === 'tail' && (
+            {props.piece.type === 'tail' && (
                 <div
                     className="absolute flex items-center justify-center bg-neutral-700 text-white"
                     style={{
