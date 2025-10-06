@@ -1,5 +1,4 @@
 import { Apple, Piece } from '@/pages/games/board';
-import { appleRate, cellSize, cols, rows, tick } from '@/pages/games/config';
 import {
     chooseStartPos,
     CowHead,
@@ -19,6 +18,7 @@ import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
 import { Dispatch, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
+import { config } from './config';
 
 type GameState = {
     players: Player[];
@@ -40,9 +40,9 @@ type PlayerAction =
 
 const generateGrid = () => {
     const cellsTemp = [];
-    for (let y = 0; y < rows; y++) {
+    for (let y = 0; y < config.rows; y++) {
         const row = [];
-        for (let x = 0; x < cols; x++) {
+        for (let x = 0; x < config.cols; x++) {
             row.push(null);
         }
         cellsTemp.push(row);
@@ -142,7 +142,7 @@ function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'SPAWN_APPLE') {
-        if (state.ticksSinceApple < appleRate) {
+        if (state.ticksSinceApple < config.appleRate) {
             return {
                 ...state,
                 ticksSinceApple: state.ticksSinceApple + 1,
@@ -282,7 +282,7 @@ export const Snakes = () => {
             movePlayers(gameState, dispatch);
             dispatch({ type: 'SPAWN_APPLE' });
         },
-        gameState.isPaused ? null : tick,
+        gameState.isPaused ? null : config.tick,
     );
 
     return (
@@ -329,7 +329,7 @@ export const Snakes = () => {
                             {row.map((piece, x) => (
                                 <div
                                     key={x}
-                                    style={{ width: cellSize, height: cellSize }}
+                                    style={{ width: config.cellSize, height: config.cellSize }}
                                     className={classNames(
                                         'flex items-center justify-center border-1 border-black text-lg',
                                         x < row.length - 1 && 'border-r-0',
@@ -366,8 +366,8 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
                 <div
                     className="absolute flex items-center justify-center bg-amber-950 text-white"
                     style={{
-                        height: cellSize,
-                        width: cellSize,
+                        height: config.cellSize,
+                        width: config.cellSize,
                         top: props.piece.pos.y * 40,
                         left: props.piece.pos.x * 40,
                     }}
@@ -380,8 +380,8 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
                 <div
                     className="absolute flex items-center justify-center bg-neutral-500 text-black"
                     style={{
-                        height: cellSize,
-                        width: cellSize,
+                        height: config.cellSize,
+                        width: config.cellSize,
                         top: props.piece.pos.y * 40,
                         left: props.piece.pos.x * 40,
                     }}
@@ -396,10 +396,10 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
                 <div
                     className="absolute flex items-center justify-center bg-neutral-700 text-white"
                     style={{
-                        height: cellSize,
-                        width: cellSize,
-                        top: props.piece.pos.y * cellSize,
-                        left: props.piece.pos.x * cellSize,
+                        height: config.cellSize,
+                        width: config.cellSize,
+                        top: props.piece.pos.y * config.cellSize,
+                        left: props.piece.pos.x * config.cellSize,
                     }}
                 >
                     T
@@ -413,10 +413,10 @@ const RenderApple = (props: { piece: Apple }) => (
     <div
         className="absolute flex items-center justify-center bg-red-800 text-white"
         style={{
-            height: cellSize,
-            width: cellSize,
-            top: props.piece.y * cellSize,
-            left: props.piece.x * cellSize,
+            height: config.cellSize,
+            width: config.cellSize,
+            top: props.piece.y * config.cellSize,
+            left: props.piece.x * config.cellSize,
         }}
     >
         A

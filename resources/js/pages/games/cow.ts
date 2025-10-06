@@ -1,6 +1,6 @@
 import { clamp, getRandomNumber } from '@/lib/utils';
 import { Apple } from '@/pages/games/board';
-import { cols, rows } from '@/pages/games/config';
+import { config } from './config';
 
 export type Player = {
     id: string;
@@ -37,8 +37,8 @@ export type CowTail = {
     nextPiece?: CowPiece; // @todo narrow exclude nextPiece on CowTail
 };
 export const chooseStartPos = () => ({
-    x: getRandomNumber(2, cols - 2), // Ensure tail doesn't spawn off left edge (all players spawn facing right)
-    y: getRandomNumber(1, rows - 2),
+    x: getRandomNumber(2, config.cols - 2), // Ensure tail doesn't spawn off left edge (all players spawn facing right)
+    y: getRandomNumber(1, config.rows - 2),
 });
 
 export const move = (apples: Apple[], piece?: CowPiece, queueDir?: Direction) => {
@@ -65,19 +65,19 @@ const shiftPos = (pos: CowPos): CowPos => {
         dir: pos.dir,
     };
     if (pos.dir === 'up') {
-        newPos.y = clamp(pos.y - 1, 0, cols - 1);
+        newPos.y = clamp(pos.y - 1, 0, config.cols - 1);
         return newPos;
     }
     if (pos.dir === 'right') {
-        newPos.x = clamp(pos.x + 1, 0, rows - 1);
+        newPos.x = clamp(pos.x + 1, 0, config.rows - 1);
         return newPos;
     }
     if (pos.dir === 'down') {
-        newPos.y = clamp(pos.y + 1, 0, cols - 1);
+        newPos.y = clamp(pos.y + 1, 0, config.cols - 1);
         return newPos;
     }
 
-    newPos.x = clamp(pos.x - 1, 0, rows - 1);
+    newPos.x = clamp(pos.x - 1, 0, config.rows - 1);
     return newPos;
 };
 export type Direction = 'up' | 'down' | 'right' | 'left';
@@ -129,9 +129,9 @@ function playerHasCollidedWithPiece(playerAHeadPos: CowPos, piece: CowPiece): bo
 export function playerHasCollidedWithAnyWall(player: Player): boolean {
     return (
         (player.headPiece?.pos?.x as number) < 0 ||
-        (player.headPiece?.pos?.x as number) >= cols ||
+        (player.headPiece?.pos?.x as number) >= config.cols ||
         (player.headPiece?.pos?.y as number) < 0 ||
-        (player.headPiece?.pos?.y as number) > rows
+        (player.headPiece?.pos?.y as number) > config.rows
     );
 }
 

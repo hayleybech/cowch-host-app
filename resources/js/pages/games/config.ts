@@ -1,7 +1,7 @@
-export const rows = 20;
-export const cols = 20;
-
-export const cellSize = 40;
-
-export const tick = 500;
-export const appleRate = 10;
+export const config = {
+    rows: 20,
+    cols: 20,
+    cellSize: 40,
+    tick: 500,
+    appleRate: 10,
+} as const;
