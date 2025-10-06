@@ -1,10 +1,9 @@
-import { Apple, Piece } from '@/pages/games/board';
+import { Apple, Piece, Position } from '@/pages/games/board';
 import {
     chooseStartPos,
     CowHead,
     CowMiddle,
     CowPiece,
-    CowPos,
     CowTail,
     Direction,
     getSecondLastPiece,
@@ -55,7 +54,7 @@ type GameAction =
     | { type: 'CHANGE_DIRECTION'; payload: { playerId: string; direction: Direction } }
     | { type: 'UPDATE_PLAYERS'; payload: Player[] }
     | { type: 'SPAWN_APPLE' }
-    | { type: 'REMOVE_APPLE'; payload: { x: number; y: number } }
+    | { type: 'REMOVE_APPLE'; payload: Position }
     | { type: 'TOGGLE_PAUSE' };
 
 function reducer(state: GameState, action: GameAction): GameState {
@@ -67,27 +66,22 @@ function reducer(state: GameState, action: GameAction): GameState {
             pos: {
                 x: startXy.x - 2,
                 y: startXy.y,
-                dir: 'right',
             },
+            dir: 'right',
         };
         const cowMiddle: CowMiddle = {
             type: 'middle',
             pos: {
                 x: startXy.x - 1,
                 y: startXy.y,
-                dir: 'right',
             },
+            dir: 'right',
             nextPiece: cowTail,
         };
         const head: CowHead = {
             type: 'head',
-            // @ts-expect-error will be immediately set on the next line, don't want to broaden type
-            player: undefined,
-            pos: {
-                x: startXy.x,
-                y: startXy.y,
-                dir: 'right',
-            },
+            pos: startXy,
+            dir: 'right',
             nextPiece: cowMiddle,
         };
         const player: Player = {
@@ -97,7 +91,6 @@ function reducer(state: GameState, action: GameAction): GameState {
             score: 0,
             isAlive: true,
         };
-        head.player = player;
 
         return {
             ...state,
@@ -116,7 +109,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         if (!player || !player.headPiece || !player.headPiece.pos) {
             return state;
         }
-        player.headPiece.pos.dir = action.payload.direction;
+        player.headPiece.dir = action.payload.direction;
 
         return {
             ...state,
@@ -135,7 +128,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         return {
             ...state,
             apples: state.apples.toSpliced(
-                state.apples.findIndex((apple) => apple.x === action.payload.x && apple.y === action.payload.y),
+                state.apples.findIndex((apple) => apple.pos.x === action.payload.x && apple.pos.y === action.payload.y),
                 1,
             ),
         };
@@ -152,7 +145,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         const apples = state.apples;
         apples.push({
             type: 'apple',
-            ...chooseStartPos(),
+            pos: chooseStartPos(),
         });
 
         return {
@@ -181,7 +174,6 @@ function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
 
         const tempPlayer = { ...player };
         tempPlayer.headPiece = move(state.apples, player.headPiece) as CowHead | undefined;
-        tempPlayer.score = tempPlayer!.headPiece!.player.score;
         return tempPlayer;
     });
 
@@ -195,7 +187,7 @@ function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
         const appleCollided = playerHasCollidedWithAnyApple(player.headPiece.pos, state.apples);
         if (player.headPiece && appleCollided) {
             // Remove Apple
-            dispatch({ type: 'REMOVE_APPLE', payload: { x: appleCollided.x, y: appleCollided.y } });
+            dispatch({ type: 'REMOVE_APPLE', payload: { x: appleCollided.pos.x, y: appleCollided.pos.y } });
 
             // Grow tail
             const playerOld = state.players.find((playerA) => playerA.id === player.id) as Player;
@@ -205,10 +197,12 @@ function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
             );
             getSecondLastPiece(player.headPiece.nextPiece as CowPiece, player.headPiece).nextPiece = {
                 type: 'middle',
-                pos: { ...(slpOld.pos as CowPos) },
+                pos: { ...(slpOld.pos as Position) },
+                dir: slpOld.dir as Direction,
                 nextPiece: {
                     type: 'tail',
-                    pos: { ...(slpOld.nextPiece?.pos as CowPos) },
+                    pos: { ...(slpOld.nextPiece?.pos as Position) },
+                    dir: slpOld.nextPiece?.dir as Direction,
                 },
             };
             player.score++;
@@ -345,7 +339,7 @@ export const Snakes = () => {
                         (player) => !!player.headPiece && <RenderCowPiece key={player.id} piece={player.headPiece} />,
                     )}
                     {gameState.apples.map((apple) => (
-                        <RenderApple piece={apple} key={`apple-[${apple.x},${apple.y}]`} />
+                        <RenderApple apple={apple} key={`apple-[${apple.pos.x},${apple.pos.y}]`} />
                     ))}
                 </div>
             </div>
@@ -409,14 +403,14 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
     );
 };
 
-const RenderApple = (props: { piece: Apple }) => (
+const RenderApple = (props: { apple: Apple }) => (
     <div
         className="absolute flex items-center justify-center bg-red-800 text-white"
         style={{
             height: config.cellSize,
             width: config.cellSize,
-            top: props.piece.y * config.cellSize,
-            left: props.piece.x * config.cellSize,
+            top: props.apple.pos.y * config.cellSize,
+            left: props.apple.pos.x * config.cellSize,
         }}
     >
         A
