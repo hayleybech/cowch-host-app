@@ -1,50 +1,7 @@
 import { getRandomNumber } from '@/lib/utils';
-import { Apple, Position } from '@/pages/games/board';
 import { config } from './config';
+import { AlivePlayer, Apple, CowPiece, Player, Position } from './types';
 
-export type AlivePlayer = {
-    id: string;
-    username: string;
-    score: number;
-    isAlive: true;
-    headPiece: CowHead;
-};
-export type DeadPlayer = {
-    id: string;
-    username: string;
-    score: number;
-    isAlive: false;
-};
-export type Player = AlivePlayer | DeadPlayer;
-
-export type CowPos = {
-    x: number;
-    y: number;
-    dir: Direction;
-};
-export type CowPiece = CowHead | CowMiddle | CowTail;
-export type CowHead = {
-    type: 'head';
-
-    pos: Position;
-    dir: Direction; // The direction the piece is queued to move on its NEXT frame
-
-    // Linked list of bits of cow. Thanks, bachelor degree!
-    // @todo narrow to exclude CowHead
-    nextPiece: CowPiece;
-};
-export type CowMiddle = {
-    type: 'middle';
-    pos: Position;
-    dir: Direction;
-    nextPiece: CowPiece;
-};
-export type CowTail = {
-    type: 'tail';
-    pos: Position;
-    dir: Direction;
-    nextPiece: undefined;
-};
 export const chooseStartPos = (): Position => ({
     x: getRandomNumber(2, config.cols - 2), // Ensure tail doesn't spawn off left edge (all players spawn facing right)
     y: getRandomNumber(1, config.rows - 2),
