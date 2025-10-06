@@ -1,5 +1,5 @@
 import { clamp, getRandomNumber } from '@/lib/utils';
-import { Piece } from '@/pages/games/board';
+import { Apple } from '@/pages/games/board';
 import { cols, rows } from '@/pages/games/config';
 
 export type Player = {
@@ -9,7 +9,7 @@ export type Player = {
     pos?: CowPos;
     score: number;
 };
-type CowPos = {
+export type CowPos = {
     x: number;
     y: number;
     dir: Direction; // The direction the piece is queued to move on its NEXT frame
@@ -37,10 +37,11 @@ export type CowTail = {
     nextPiece?: CowPiece; // @todo narrow exclude nextPiece on CowTail
 };
 export const chooseStartPos = () => ({
-    x: getRandomNumber(1, cols - 2),
+    x: getRandomNumber(2, cols - 2), // Ensure tail doesn't spawn off left edge (all players spawn facing right)
     y: getRandomNumber(1, rows - 2),
 });
-export const move = (cells: (Piece | null)[][], piece?: CowPiece, queueDir?: Direction) => {
+
+export const move = (apples: Apple[], piece?: CowPiece, queueDir?: Direction) => {
     if (!piece || !piece.pos) {
         return piece;
     }
@@ -48,36 +49,15 @@ export const move = (cells: (Piece | null)[][], piece?: CowPiece, queueDir?: Dir
     const newPiece = { ...piece };
     newPiece.pos = shiftPos(newPiece.pos as CowPos);
 
-    // Remove from old cell
-    cells[piece.pos.y][piece.pos.x] = null;
-
-    // Check for apple
-    let grew = false;
-    if (newPiece.type === 'head' && cells[newPiece.pos.y][newPiece.pos.x]?.type === 'apple') {
-        // Grow
-        const newMiddle: CowMiddle = {
-            type: 'middle',
-            pos: { ...piece.pos },
-            nextPiece: piece.nextPiece,
-        };
-        newPiece.nextPiece = newMiddle;
-        cells[piece.pos.y][piece.pos.x] = newMiddle;
-        grew = true;
-        newPiece.player.score++;
-    }
-
-    // Put in new cell
-    cells[newPiece.pos.y][newPiece.pos.x] = newPiece;
-
     // Queue the piece to move in the direction its parent piece just moved
     newPiece.pos.dir = queueDir ?? newPiece.pos.dir; // If undefined, assume headPiece and keep moving straight
 
     // Recursively move the next piece(s)
-    if (!grew) {
-        newPiece.nextPiece = move(cells, newPiece.nextPiece, piece.pos.dir);
-    }
+    newPiece.nextPiece = move(apples, newPiece.nextPiece, piece.pos.dir);
+
     return newPiece;
 };
+
 const shiftPos = (pos: CowPos): CowPos => {
     const newPos = {
         x: pos.x,
@@ -101,3 +81,14 @@ const shiftPos = (pos: CowPos): CowPos => {
     return newPos;
 };
 export type Direction = 'up' | 'down' | 'right' | 'left';
+
+export function playerHasCollidedWithAnyApple(pos: CowPos, apples: Apple[]): Apple | undefined {
+    return apples.find((apple) => apple.x === pos.x && apple.y === pos.y);
+}
+
+export function getSecondLastPiece(piece: CowPiece, prevPiece: CowPiece): CowPiece {
+    if (!piece.nextPiece) {
+        return prevPiece;
+    }
+    return getSecondLastPiece(piece.nextPiece, piece);
+}

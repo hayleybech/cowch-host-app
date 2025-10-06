@@ -1,13 +1,26 @@
 import { Apple, Piece } from '@/pages/games/board';
-import { appleRate, cols, rows, tick } from '@/pages/games/config';
-import { chooseStartPos, CowHead, CowMiddle, CowTail, Direction, move, Player } from '@/pages/games/cow';
+import { appleRate, cellSize, cols, rows, tick } from '@/pages/games/config';
+import {
+    chooseStartPos,
+    CowHead,
+    CowMiddle,
+    CowPiece,
+    CowPos,
+    CowTail,
+    Direction,
+    getSecondLastPiece,
+    move,
+    Player,
+    playerHasCollidedWithAnyApple,
+} from '@/pages/games/cow';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { Dispatch, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
 
 type GameState = {
     players: Player[];
+    apples: Apple[];
     cells: (Piece | null)[][];
     ticksSinceApple: number;
     isPaused: boolean;
@@ -38,8 +51,9 @@ const generateGrid = () => {
 type GameAction =
     | { type: 'ADD_PLAYER'; payload: { playerId: string; username: string } }
     | { type: 'CHANGE_DIRECTION'; payload: { playerId: string; direction: Direction } }
-    | { type: 'MOVE_PLAYERS' }
+    | { type: 'UPDATE_PLAYERS'; payload: Player[] }
     | { type: 'SPAWN_APPLE' }
+    | { type: 'REMOVE_APPLE'; payload: { x: number; y: number } }
     | { type: 'TOGGLE_PAUSE' };
 
 function reducer(state: GameState, action: GameAction): GameState {
@@ -83,15 +97,9 @@ function reducer(state: GameState, action: GameAction): GameState {
         };
         head.player = player;
 
-        const tempCells = [...state.cells];
-        tempCells[startXy.y][startXy.x] = head;
-        tempCells[cowMiddle.pos.y][cowMiddle.pos.x] = { ...cowMiddle };
-        tempCells[cowTail.pos.y][cowTail.pos.x] = { ...cowTail };
-
         return {
             ...state,
             players: [...state.players, player],
-            cells: tempCells,
         };
     }
 
@@ -107,41 +115,44 @@ function reducer(state: GameState, action: GameAction): GameState {
         return {
             ...state,
             players: temp,
-            cells: state.cells,
         };
     }
 
-    if (action.type === 'MOVE_PLAYERS') {
-        const cells = [...state.cells];
-        const players = state.players.map((player) => {
-            const tempPlayer = { ...player };
-            tempPlayer.headPiece = move(cells, player.headPiece) as CowHead | undefined;
-            tempPlayer.score = tempPlayer!.headPiece!.player.score;
-            return tempPlayer;
-        });
+    if (action.type === 'UPDATE_PLAYERS') {
+        return {
+            ...state,
+            players: action.payload,
+        };
+    }
 
-        return { ...state, players, cells };
+    if (action.type === 'REMOVE_APPLE') {
+        return {
+            ...state,
+            apples: state.apples.toSpliced(
+                state.apples.findIndex((apple, i) => apple.x === action.payload.x && apple.y === action.payload.y),
+                1,
+            ),
+        };
     }
 
     if (action.type === 'SPAWN_APPLE') {
-        const cells = [...state.cells];
-        let ticksSinceApple = state.ticksSinceApple;
-        if (state.ticksSinceApple > appleRate) {
-            const apple: Apple = {
-                type: 'apple',
-                ...chooseStartPos(),
+        if (state.ticksSinceApple < appleRate) {
+            return {
+                ...state,
+                ticksSinceApple: state.ticksSinceApple + 1,
             };
-            cells[apple.y][apple.x] = { ...apple };
-            ticksSinceApple = 0;
-        } else {
-            ticksSinceApple++;
         }
 
-        // Update game state
+        const apples = state.apples;
+        apples.push({
+            type: 'apple',
+            ...chooseStartPos(),
+        });
+
         return {
             ...state,
-            cells,
-            ticksSinceApple,
+            apples,
+            ticksSinceApple: 0,
         };
     }
 
@@ -155,12 +166,61 @@ function reducer(state: GameState, action: GameAction): GameState {
     return state;
 }
 
+function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
+    // Calculate new player positions
+    const players = state.players.map((player) => {
+        const tempPlayer = { ...player };
+        tempPlayer.headPiece = move(state.apples, player.headPiece) as CowHead | undefined;
+        tempPlayer.score = tempPlayer!.headPiece!.player.score;
+        return tempPlayer;
+    });
+
+    // Check collisions with apples
+    players.map((player) => {
+        if (!player.headPiece || !player.headPiece.pos) {
+            return player;
+        }
+
+        // Check for apple
+        const appleCollided = playerHasCollidedWithAnyApple(player.headPiece.pos, state.apples);
+        if (player.headPiece && appleCollided) {
+            // Remove Apple
+            dispatch({ type: 'REMOVE_APPLE', payload: { x: appleCollided.x, y: appleCollided.y } });
+
+            // Grow tail
+            const playerOld = state.players.find((playerA) => playerA.id === player.id) as Player;
+            const slpOld = getSecondLastPiece(
+                (playerOld.headPiece as CowPiece).nextPiece as CowPiece,
+                playerOld.headPiece as CowPiece,
+            );
+            getSecondLastPiece(player.headPiece.nextPiece as CowPiece, player.headPiece).nextPiece = {
+                type: 'middle',
+                pos: { ...(slpOld.pos as CowPos) },
+                nextPiece: {
+                    type: 'tail',
+                    pos: { ...(slpOld.nextPiece?.pos as CowPos) },
+                },
+            };
+            player.score++;
+        }
+        return player;
+    });
+
+    // @todo Check collisions with players
+
+    // @todo Check collisions with walls
+
+    // Commit new positions
+    dispatch({ type: 'UPDATE_PLAYERS', payload: players });
+}
+
 export const Snakes = () => {
     const [peerId, setPeerId] = useState<string>();
     const peerRef = useRef<Peer>(null);
 
     const [gameState, dispatch] = useReducer(reducer, {
         players: [],
+        apples: [],
         cells: generateGrid(),
         ticksSinceApple: 0,
         isPaused: true,
@@ -199,7 +259,7 @@ export const Snakes = () => {
 
     useInterval(
         () => {
-            dispatch({ type: 'MOVE_PLAYERS' });
+            movePlayers(gameState, dispatch);
             dispatch({ type: 'SPAWN_APPLE' });
         },
         gameState.isPaused ? null : tick,
@@ -232,40 +292,38 @@ export const Snakes = () => {
                             <li key={player.id} className="flex justify-between gap-8">
                                 <div className="font-extrabold">{player.username}</div>
                                 <div>{player.score}</div>
+                                <div>
+                                    X: {player.headPiece?.pos?.x}, Y: {player.headPiece?.pos?.y}
+                                </div>
                             </li>
                         ))}
                     </ul>
                 </div>
 
                 {/* Grid */}
-                <div>
+                <div className="relative">
                     {gameState.cells.map((row, y) => (
                         <div key={y} className="flex w-full flex-nowrap">
                             {row.map((piece, x) => (
                                 <div
                                     key={x}
+                                    style={{ width: cellSize, height: cellSize }}
                                     className={classNames(
-                                        'flex h-10 w-10 items-center justify-center border-1 border-black text-lg',
+                                        'flex items-center justify-center border-1 border-black text-lg',
                                         x < row.length - 1 && 'border-r-0',
                                         y < gameState.cells.length - 1 && 'border-b-0',
                                     )}
                                 >
-                                    {/* new mp logic*/}
-                                    {piece?.type === 'head' && (
-                                        <div className="flex h-10 w-10 items-center justify-center bg-amber-950 text-white">
-                                            H
-                                        </div>
-                                    )}
-                                    {piece?.type === 'middle' && 'M'}
-                                    {piece?.type === 'tail' && 'T'}
-                                    {piece?.type === 'apple' && (
-                                        <div className="flex h-10 w-10 items-center justify-center bg-red-800 text-white">
-                                            A
-                                        </div>
-                                    )}
+                                    &nbsp;
                                 </div>
                             ))}
                         </div>
+                    ))}
+                    {gameState.players.map(
+                        (player) => !!player.headPiece && <RenderCowPiece key={player.id} piece={player.headPiece} />,
+                    )}
+                    {gameState.apples.map((apple) => (
+                        <RenderApple piece={apple} key={`apple-[${apple.x},${apple.y}]`} />
                     ))}
                 </div>
             </div>
@@ -274,3 +332,71 @@ export const Snakes = () => {
 };
 
 export default Snakes;
+
+const RenderCowPiece = (props: { piece: CowPiece }) => {
+    if (!props.piece.pos) {
+        return null;
+    }
+
+    return (
+        <>
+            {props.piece?.type === 'head' && (
+                <div
+                    className="absolute flex items-center justify-center bg-amber-950 text-white"
+                    style={{
+                        height: cellSize,
+                        width: cellSize,
+                        top: props.piece.pos.y * 40,
+                        left: props.piece.pos.x * 40,
+                    }}
+                >
+                    H
+                </div>
+            )}
+
+            {props.piece?.type === 'middle' && (
+                <div
+                    className="absolute flex items-center justify-center bg-neutral-500 text-black"
+                    style={{
+                        height: cellSize,
+                        width: cellSize,
+                        top: props.piece.pos.y * 40,
+                        left: props.piece.pos.x * 40,
+                    }}
+                >
+                    M
+                </div>
+            )}
+
+            {!!props.piece.nextPiece && <RenderCowPiece piece={props.piece.nextPiece} />}
+
+            {props.piece?.type === 'tail' && (
+                <div
+                    className="absolute flex items-center justify-center bg-neutral-700 text-white"
+                    style={{
+                        height: cellSize,
+                        width: cellSize,
+                        top: props.piece.pos.y * cellSize,
+                        left: props.piece.pos.x * cellSize,
+                    }}
+                >
+                    T
+                </div>
+            )}
+        </>
+    );
+};
+
+const RenderApple = (props: { piece: Apple }) => (
+    <div
+        className="absolute flex items-center justify-center bg-red-800 text-white"
+        style={{
+            height: cellSize,
+            width: cellSize,
+            top: props.piece.y * cellSize,
+            left: props.piece.x * cellSize,
+        }}
+    >
+        A
+    </div>
+);
