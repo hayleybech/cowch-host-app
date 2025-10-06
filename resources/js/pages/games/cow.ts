@@ -6,8 +6,8 @@ export type Player = {
     id: string;
     username: string;
     headPiece?: CowHead;
-    pos?: CowPos;
     score: number;
+    isAlive: boolean;
 };
 export type CowPos = {
     x: number;
@@ -91,4 +91,50 @@ export function getSecondLastPiece(piece: CowPiece, prevPiece: CowPiece): CowPie
         return prevPiece;
     }
     return getSecondLastPiece(piece.nextPiece, piece);
+}
+
+export function playerHasCollidedWithAnyPlayer(playerA: Player, players: Player[]): boolean {
+    return players.some((playerB) => playerHasCollidedWithPlayer(playerA, playerB));
+}
+
+function playerHasCollidedWithPlayer(playerA: Player, playerB: Player): boolean {
+    if (!playerA.headPiece || !playerA.headPiece.pos || !playerB.headPiece || !playerB.headPiece.pos) {
+        return false;
+    }
+    if (playerA.headPiece !== playerB.headPiece && posIsEqual(playerA.headPiece.pos, playerB.headPiece.pos)) {
+        return true;
+    }
+    if (!playerB.headPiece.nextPiece) {
+        return false;
+    }
+    return playerHasCollidedWithPiece(playerA.headPiece.pos, playerB.headPiece.nextPiece);
+}
+
+function playerHasCollidedWithPiece(playerAHeadPos: CowPos, piece: CowPiece): boolean {
+    if (!piece.pos) {
+        return false;
+    }
+
+    if (posIsEqual(playerAHeadPos, piece.pos)) {
+        return true;
+    }
+
+    if (!piece.nextPiece) {
+        return false;
+    }
+
+    return playerHasCollidedWithPiece(playerAHeadPos, piece.nextPiece);
+}
+
+export function playerHasCollidedWithAnyWall(player: Player): boolean {
+    return (
+        (player.headPiece?.pos?.x as number) < 0 ||
+        (player.headPiece?.pos?.x as number) >= cols ||
+        (player.headPiece?.pos?.y as number) < 0 ||
+        (player.headPiece?.pos?.y as number) > rows
+    );
+}
+
+function posIsEqual(posA: CowPos, posB: CowPos): boolean {
+    return posA.x === posB.x && posA.y === posB.y;
 }

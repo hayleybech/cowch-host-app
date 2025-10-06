@@ -12,6 +12,8 @@ import {
     move,
     Player,
     playerHasCollidedWithAnyApple,
+    playerHasCollidedWithAnyPlayer,
+    playerHasCollidedWithAnyWall,
 } from '@/pages/games/cow';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
@@ -92,8 +94,8 @@ function reducer(state: GameState, action: GameAction): GameState {
             id: action.payload.playerId,
             username: action.payload.username,
             headPiece: head,
-            pos: head.pos,
             score: 0,
+            isAlive: true,
         };
         head.player = player;
 
@@ -104,8 +106,12 @@ function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'CHANGE_DIRECTION') {
+        const player = state.players.find((player) => player.id == action.payload.playerId);
+        if (!player?.isAlive) {
+            return state;
+        }
+
         const temp = [...state.players];
-        const player = temp.find((player) => player.id == action.payload.playerId);
 
         if (!player || !player.headPiece || !player.headPiece.pos) {
             return state;
@@ -129,7 +135,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         return {
             ...state,
             apples: state.apples.toSpliced(
-                state.apples.findIndex((apple, i) => apple.x === action.payload.x && apple.y === action.payload.y),
+                state.apples.findIndex((apple) => apple.x === action.payload.x && apple.y === action.payload.y),
                 1,
             ),
         };
@@ -169,6 +175,10 @@ function reducer(state: GameState, action: GameAction): GameState {
 function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
     // Calculate new player positions
     const players = state.players.map((player) => {
+        if (!player.isAlive) {
+            return player;
+        }
+
         const tempPlayer = { ...player };
         tempPlayer.headPiece = move(state.apples, player.headPiece) as CowHead | undefined;
         tempPlayer.score = tempPlayer!.headPiece!.player.score;
@@ -177,7 +187,7 @@ function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
 
     // Check collisions with apples
     players.map((player) => {
-        if (!player.headPiece || !player.headPiece.pos) {
+        if (!player.isAlive || !player.headPiece || !player.headPiece.pos) {
             return player;
         }
 
@@ -206,9 +216,19 @@ function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
         return player;
     });
 
-    // @todo Check collisions with players
+    // Check collisions with players and walls
+    players.map((player) => {
+        if (!player.isAlive) {
+            return player;
+        }
 
-    // @todo Check collisions with walls
+        if (playerHasCollidedWithAnyPlayer(player, players) || playerHasCollidedWithAnyWall(player)) {
+            player.isAlive = false;
+            player.headPiece = undefined; // @todo improve types (should be null?)
+        }
+
+        return player;
+    });
 
     // Commit new positions
     dispatch({ type: 'UPDATE_PLAYERS', payload: players });
@@ -290,7 +310,9 @@ export const Snakes = () => {
                     <ul>
                         {gameState.players.map((player) => (
                             <li key={player.id} className="flex justify-between gap-8">
-                                <div className="font-extrabold">{player.username}</div>
+                                <div className="font-extrabold">
+                                    {player.username} {!player.isAlive && '(Dead)'}
+                                </div>
                                 <div>{player.score}</div>
                                 <div>
                                     X: {player.headPiece?.pos?.x}, Y: {player.headPiece?.pos?.y}
