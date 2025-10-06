@@ -1,4 +1,4 @@
-import { clamp, getRandomNumber } from '@/lib/utils';
+import { getRandomNumber } from '@/lib/utils';
 import { Apple, Position } from '@/pages/games/board';
 import { config } from './config';
 
@@ -69,24 +69,25 @@ const shiftPos = (pos: Position, dir: Direction): Position => {
     if (dir === 'up') {
         return {
             x: pos.x,
-            y: clamp(pos.y - 1, 0, config.cols - 1),
+            y: pos.y - 1,
         };
     }
     if (dir === 'right') {
         return {
-            x: clamp(pos.x + 1, 0, config.rows - 1),
+            x: pos.x + 1,
             y: pos.y,
         };
     }
     if (dir === 'down') {
         return {
             x: pos.x,
-            y: clamp(pos.y + 1, 0, config.cols - 1),
+            y: pos.y + 1,
         };
     }
 
+    // left
     return {
-        x: clamp(pos.x - 1, 0, config.rows - 1),
+        x: pos.x - 1,
         y: pos.y,
     };
 };
@@ -138,10 +139,10 @@ function playerHasCollidedWithPiece(playerAHeadPos: Position, piece: CowPiece): 
 
 export function playerHasCollidedWithAnyWall(player: AlivePlayer): boolean {
     return (
-        (player.headPiece.pos.x as number) < 0 ||
-        (player.headPiece.pos.x as number) >= config.cols ||
-        (player.headPiece.pos.y as number) < 0 ||
-        (player.headPiece.pos.y as number) > config.rows
+        player.headPiece.pos.x < 0 ||
+        player.headPiece.pos.x >= config.cols ||
+        player.headPiece.pos.y < 0 ||
+        player.headPiece.pos.y >= config.rows
     );
 }
 

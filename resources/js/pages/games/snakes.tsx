@@ -291,35 +291,32 @@ export const Snakes = () => {
                 </nav>
             </header>
 
-            <div className="flex w-full justify-between">
-                <div>
-                    <p className="text-[#706f6c]] mb-8">Join code: {peerId}</p>
-                    <p>
-                        <button
-                            className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
-                            onClick={() => dispatch({ type: 'TOGGLE_PAUSE' })}
-                        >
-                            {gameState.isPaused ? 'Unpause' : 'Pause'}
-                        </button>
-                    </p>
-                </div>
-                {/* Scoreboard */}
-                <div>
-                    <ul>
-                        {gameState.players.map((player) => (
-                            <li key={player.id} className="flex justify-between gap-8">
-                                <div className="font-extrabold">
-                                    {player.username} {!player.isAlive && '(Dead)'}
-                                </div>
-                                <div>{player.score}</div>
-                                {isAlive(player) && (
-                                    <div>
-                                        X: {player.headPiece.pos.x}, Y: {player.headPiece.pos.y}
+            <div className="flex w-full justify-between gap-8">
+                <div className="grow">
+                    <div className="mb-8">
+                        <p className="text-[#706f6c]] mb-8">Join code: {peerId}</p>
+                        <p>
+                            <button
+                                className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
+                                onClick={() => dispatch({ type: 'TOGGLE_PAUSE' })}
+                            >
+                                {gameState.isPaused ? 'Unpause' : 'Pause'}
+                            </button>
+                        </p>
+                    </div>
+                    {/* Scoreboard */}
+                    <div>
+                        <ul>
+                            {gameState.players.map((player) => (
+                                <li key={player.id} className="flex justify-between gap-8">
+                                    <div className="font-extrabold">
+                                        {player.username} {!player.isAlive && '(Dead)'}
                                     </div>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
+                                    <div>{player.score}</div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
 
                 {/* Grid */}
@@ -364,8 +361,8 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
                     style={{
                         height: config.cellSize,
                         width: config.cellSize,
-                        top: props.piece.pos.y * 40,
-                        left: props.piece.pos.x * 40,
+                        top: props.piece.pos.y * config.cellSize,
+                        left: props.piece.pos.x * config.cellSize,
                     }}
                 >
                     H
@@ -378,8 +375,8 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
                     style={{
                         height: config.cellSize,
                         width: config.cellSize,
-                        top: props.piece.pos.y * 40,
-                        left: props.piece.pos.x * 40,
+                        top: props.piece.pos.y * config.cellSize,
+                        left: props.piece.pos.x * config.cellSize,
                     }}
                 >
                     M
