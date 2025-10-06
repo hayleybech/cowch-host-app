@@ -17,7 +17,7 @@ import {
 } from '@/pages/games/cow';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
-import { Dispatch, useEffect, useReducer, useRef, useState } from 'react';
+import { Dispatch, useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
 import { config } from './config';
 
@@ -27,6 +27,7 @@ type GameState = {
     cells: (Piece | null)[][];
     ticksSinceApple: number;
     isPaused: boolean;
+    connections: DataConnection[];
 };
 
 type PlayerAction =
@@ -37,7 +38,10 @@ type PlayerAction =
     | {
           type: 'move';
           payload: Direction;
-      };
+      }
+    | { type: 'pause' };
+
+type GameNotification = { type: 'paused' } | { type: 'resumed' };
 
 const generateGrid = () => {
     const cellsTemp = [];
@@ -52,7 +56,7 @@ const generateGrid = () => {
 };
 
 type GameAction =
-    | { type: 'ADD_PLAYER'; payload: { playerId: string; username: string } }
+    | { type: 'ADD_PLAYER'; payload: { playerId: string; username: string; connection: DataConnection } }
     | { type: 'CHANGE_DIRECTION'; payload: { playerId: string; direction: Direction } }
     | { type: 'UPDATE_PLAYERS'; payload: Player[] }
     | { type: 'SPAWN_APPLE' }
@@ -98,6 +102,7 @@ function reducer(state: GameState, action: GameAction): GameState {
         return {
             ...state,
             players: [...state.players, player],
+            connections: [...state.connections, action.payload.connection],
         };
     }
 
@@ -159,6 +164,9 @@ function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'TOGGLE_PAUSE') {
+        state.connections.forEach((connection) => {
+            connection.send({ type: state.isPaused ? 'resumed' : 'paused' });
+        });
         return {
             ...state,
             isPaused: !state.isPaused,
@@ -242,6 +250,7 @@ export const Snakes = () => {
         cells: generateGrid(),
         ticksSinceApple: 0,
         isPaused: true,
+        connections: [],
     });
 
     useEffect(() => {
@@ -256,13 +265,19 @@ export const Snakes = () => {
             conn.on('data', function (data: unknown) {
                 const action = data as PlayerAction;
                 if (action.type === 'join') {
-                    dispatch({ type: 'ADD_PLAYER', payload: { playerId: conn.peer, username: action.payload } });
+                    dispatch({
+                        type: 'ADD_PLAYER',
+                        payload: { playerId: conn.peer, username: action.payload, connection: conn },
+                    });
                 }
                 if (action.type === 'move') {
                     dispatch({
                         type: 'CHANGE_DIRECTION',
                         payload: { playerId: conn.peer, direction: action.payload },
                     });
+                }
+                if (action.type === 'pause') {
+                    dispatch({ type: 'TOGGLE_PAUSE' });
                 }
             });
         });
@@ -283,6 +298,10 @@ export const Snakes = () => {
         gameState.isPaused ? null : config.tick,
     );
 
+    const togglePause = useCallback(() => {
+        dispatch({ type: 'TOGGLE_PAUSE' });
+    }, []);
+
     return (
         <div className="flex flex-col bg-[#FDFDFC] p-6 text-[#1b1b18] lg:p-8">
             <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
@@ -298,9 +317,9 @@ export const Snakes = () => {
                         <p>
                             <button
                                 className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
-                                onClick={() => dispatch({ type: 'TOGGLE_PAUSE' })}
+                                onClick={togglePause}
                             >
-                                {gameState.isPaused ? 'Unpause' : 'Pause'}
+                                {gameState.isPaused ? 'Resume' : 'Pause'}
                             </button>
                         </p>
                     </div>
