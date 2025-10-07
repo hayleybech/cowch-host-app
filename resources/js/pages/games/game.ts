@@ -26,6 +26,8 @@ import { Dispatch } from 'react';
 
 export function reducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'ADD_PLAYER') {
+        action.payload.connection.send({ type: state.isPaused ? 'paused' : 'resumed' });
+
         const startXy = chooseStartPos();
 
         const cowTail: CowTail = {
