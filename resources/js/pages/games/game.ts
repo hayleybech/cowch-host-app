@@ -58,6 +58,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
             headPiece: head,
             score: 0,
             isAlive: true,
+            // cowColour: getRandomElement(CowColours),
+            cowColour: state.players.length % 2 === 0 ? 'brown' : 'black',
         };
 
         return {

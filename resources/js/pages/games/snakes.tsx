@@ -1,11 +1,11 @@
 import { isAlive } from '@/pages/games/cow';
 import { movePlayers, reducer } from '@/pages/games/game';
-import { Apple, CowPiece, PlayerAction } from '@/pages/games/types';
+import { Apple, CowColour, CowPiece, PlayerAction } from '@/pages/games/types';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
-import { config } from './config';
+import { config, getSpriteBgPos, spriteBgSize, sprites } from './config';
 
 const generateGrid = () => {
     const cellsTemp = [];
@@ -118,7 +118,7 @@ export const Snakes = () => {
                 </div>
 
                 {/* Grid */}
-                <div className="relative">
+                <div className="relative" style={{ backgroundColor: '#5AC54FFF' }}>
                     {gameState.cells.map((row, y) => (
                         <div key={y} className="flex w-full flex-nowrap">
                             {row.map((piece, x) => (
@@ -126,7 +126,7 @@ export const Snakes = () => {
                                     key={x}
                                     style={{ width: config.cellSize, height: config.cellSize }}
                                     className={classNames(
-                                        'flex items-center justify-center border-1 border-black text-lg',
+                                        'flex items-center justify-center text-lg',
                                         x < row.length - 1 && 'border-r-0',
                                         y < gameState.cells.length - 1 && 'border-b-0',
                                     )}
@@ -137,7 +137,10 @@ export const Snakes = () => {
                         </div>
                     ))}
                     {gameState.players.map(
-                        (player) => isAlive(player) && <RenderCowPiece key={player.id} piece={player.headPiece} />,
+                        (player) =>
+                            isAlive(player) && (
+                                <RenderCowPiece key={player.id} piece={player.headPiece} colour={player.cowColour} />
+                            ),
                     )}
                     {gameState.apples.map((apple) => (
                         <RenderApple apple={apple} key={`apple-[${apple.pos.x},${apple.pos.y}]`} />
@@ -150,62 +153,74 @@ export const Snakes = () => {
 
 export default Snakes;
 
-const RenderCowPiece = (props: { piece: CowPiece }) => {
+const RenderCowPiece = (props: { piece: CowPiece; colour: CowColour }) => {
     return (
         <>
             {props.piece.type === 'head' && (
                 <div
                     className={classNames(
-                        'absolute flex items-center justify-center bg-amber-950 text-white',
+                        'absolute flex items-center justify-center text-white',
                         props.piece.dir === 'down' && 'rotate-90',
                         props.piece.dir === 'up' && '-rotate-90',
+                        props.piece.dir === 'left' && 'rotate-180',
                     )}
                     style={{
                         height: config.cellSize,
                         width: config.cellSize,
                         top: props.piece.pos.y * config.cellSize,
                         left: props.piece.pos.x * config.cellSize,
+                        backgroundImage: "url('/sprite.png')",
+                        backgroundSize: spriteBgSize,
+                        backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].head),
                     }}
                 >
-                    H
+                    &nbsp;
                 </div>
             )}
 
             {props.piece.type === 'middle' && (
                 <div
                     className={classNames(
-                        'absolute flex items-center justify-center bg-neutral-500 text-black',
+                        'absolute flex items-center justify-center text-black',
                         props.piece.dir === 'down' && 'rotate-90',
                         props.piece.dir === 'up' && '-rotate-90',
+                        props.piece.dir === 'left' && 'rotate-180',
                     )}
                     style={{
                         height: config.cellSize,
                         width: config.cellSize,
                         top: props.piece.pos.y * config.cellSize,
                         left: props.piece.pos.x * config.cellSize,
+                        backgroundImage: "url('/sprite.png')",
+                        backgroundSize: spriteBgSize,
+                        backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].middle),
                     }}
                 >
-                    M
+                    &nbsp;
                 </div>
             )}
 
-            {!!props.piece.nextPiece && <RenderCowPiece piece={props.piece.nextPiece} />}
+            {!!props.piece.nextPiece && <RenderCowPiece piece={props.piece.nextPiece} colour={props.colour} />}
 
             {props.piece.type === 'tail' && (
                 <div
                     className={classNames(
-                        'absolute flex items-center justify-center bg-neutral-700 text-white',
+                        'absolute flex items-center justify-center text-white',
                         props.piece.dir === 'down' && 'rotate-90',
                         props.piece.dir === 'up' && '-rotate-90',
+                        props.piece.dir === 'left' && 'rotate-180',
                     )}
                     style={{
                         height: config.cellSize,
                         width: config.cellSize,
                         top: props.piece.pos.y * config.cellSize,
                         left: props.piece.pos.x * config.cellSize,
+                        backgroundImage: "url('/sprite.png')",
+                        backgroundSize: spriteBgSize,
+                        backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].tail),
                     }}
                 >
-                    T
+                    &nbsp;
                 </div>
             )}
         </>

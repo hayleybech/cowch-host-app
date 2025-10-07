@@ -1,3 +1,4 @@
+import { sprites } from '@/pages/games/config';
 import { Direction } from '@/pages/games/cow';
 import { DataConnection } from 'peerjs';
 
@@ -48,6 +49,7 @@ export type AlivePlayer = {
     score: number;
     isAlive: true;
     headPiece: CowHead;
+    cowColour: CowColour;
 };
 export type DeadPlayer = {
     id: string;
@@ -57,11 +59,9 @@ export type DeadPlayer = {
 };
 export type Player = AlivePlayer | DeadPlayer;
 
-export type CowPos = {
-    x: number;
-    y: number;
-    dir: Direction;
-};
+export type CowColour = keyof typeof sprites.cow;
+export const CowColours = Object.keys(sprites.cow) as CowColour[];
+
 export type CowPiece = CowHead | CowMiddle | CowTail;
 export type CowHead = {
     type: 'head';
