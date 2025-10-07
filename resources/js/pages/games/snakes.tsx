@@ -145,6 +145,11 @@ export const Snakes = () => {
                     {gameState.apples.map((apple) => (
                         <RenderApple apple={apple} key={`apple-[${apple.pos.x},${apple.pos.y}]`} />
                     ))}
+                    {gameState.isPaused && (
+                        <div className="absolute top-0 right-0 bottom-0 left-0 flex items-center justify-center bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
+                            PAUSED
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
