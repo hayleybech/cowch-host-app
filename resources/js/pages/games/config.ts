@@ -4,6 +4,7 @@ export const config = {
     cellSize: 32,
     tick: 500,
     appleRate: 10,
+    resumeGracePeriod: 5,
 } as const;
 
 export const sprites = {

@@ -128,11 +128,37 @@ export function reducer(state: GameState, action: GameAction): GameState {
         };
     }
 
-    if (action.type === 'TOGGLE_PAUSE') {
-        broadcastToAll(state.connections, { type: state.isPaused ? 'resumed' : 'paused' });
+    if (action.type === 'REQUEST_TOGGLE_PAUSE') {
+        if (!state.isPaused) {
+            broadcastToAll(state.connections, { type: 'paused' });
+            return {
+                ...state,
+                isPaused: true,
+            };
+        }
+
+        if (state.resumeGracePeriodSeconds > 0) {
+            return state;
+        }
+
         return {
             ...state,
-            isPaused: !state.isPaused,
+            resumeGracePeriodSeconds: config.resumeGracePeriod,
+        };
+    }
+    if (action.type === 'TICK_RESUME_COUNTDOWN') {
+        const newValue = state.resumeGracePeriodSeconds - 1;
+        if (newValue <= 0) {
+            broadcastToAll(state.connections, { type: 'resumed' });
+            return {
+                ...state,
+                isPaused: false,
+                resumeGracePeriodSeconds: 0,
+            };
+        }
+        return {
+            ...state,
+            resumeGracePeriodSeconds: newValue,
         };
     }
 

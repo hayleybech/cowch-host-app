@@ -19,6 +19,7 @@ export type GameState = {
     cells: (Piece | null)[][];
     ticksSinceApple: number;
     isPaused: boolean;
+    resumeGracePeriodSeconds: number;
     connections: DataConnection[];
 };
 
@@ -41,7 +42,8 @@ export type GameAction =
     | { type: 'UPDATE_PLAYERS'; payload: Player[] }
     | { type: 'SPAWN_APPLE' }
     | { type: 'REMOVE_APPLE'; payload: Position }
-    | { type: 'TOGGLE_PAUSE' };
+    | { type: 'REQUEST_TOGGLE_PAUSE' }
+    | { type: 'TICK_RESUME_COUNTDOWN' };
 
 export type AlivePlayer = {
     id: string;

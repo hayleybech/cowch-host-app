@@ -29,6 +29,7 @@ export const Snakes = () => {
         cells: generateGrid(),
         ticksSinceApple: 0,
         isPaused: true,
+        resumeGracePeriodSeconds: 0,
         connections: [],
     });
 
@@ -56,7 +57,7 @@ export const Snakes = () => {
                     });
                 }
                 if (action.type === 'pause') {
-                    dispatch({ type: 'TOGGLE_PAUSE' });
+                    dispatch({ type: 'REQUEST_TOGGLE_PAUSE' });
                 }
             });
         });
@@ -71,6 +72,13 @@ export const Snakes = () => {
 
     useInterval(
         () => {
+            dispatch({ type: 'TICK_RESUME_COUNTDOWN' });
+        },
+        gameState.resumeGracePeriodSeconds > 0 ? 1000 : null,
+    );
+
+    useInterval(
+        () => {
             movePlayers(gameState, dispatch);
             dispatch({ type: 'SPAWN_APPLE' });
         },
@@ -78,7 +86,7 @@ export const Snakes = () => {
     );
 
     const togglePause = useCallback(() => {
-        dispatch({ type: 'TOGGLE_PAUSE' });
+        dispatch({ type: 'REQUEST_TOGGLE_PAUSE' });
     }, []);
 
     return (
@@ -146,8 +154,15 @@ export const Snakes = () => {
                         <RenderApple apple={apple} key={`apple-[${apple.pos.x},${apple.pos.y}]`} />
                     ))}
                     {gameState.isPaused && (
-                        <div className="absolute top-0 right-0 bottom-0 left-0 flex items-center justify-center bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
-                            PAUSED
+                        <div className="absolute top-0 right-0 bottom-0 left-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
+                            {gameState.resumeGracePeriodSeconds > 0 ? (
+                                <>
+                                    <div>RESUMING</div>
+                                    <div className="text-3xl">{gameState.resumeGracePeriodSeconds}</div>
+                                </>
+                            ) : (
+                                'PAUSED'
+                            )}
                         </div>
                     )}
                 </div>
