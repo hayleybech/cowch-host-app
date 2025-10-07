@@ -155,7 +155,11 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
         <>
             {props.piece.type === 'head' && (
                 <div
-                    className="absolute flex items-center justify-center bg-amber-950 text-white"
+                    className={classNames(
+                        'absolute flex items-center justify-center bg-amber-950 text-white',
+                        props.piece.dir === 'down' && 'rotate-90',
+                        props.piece.dir === 'up' && '-rotate-90',
+                    )}
                     style={{
                         height: config.cellSize,
                         width: config.cellSize,
@@ -169,7 +173,11 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
 
             {props.piece.type === 'middle' && (
                 <div
-                    className="absolute flex items-center justify-center bg-neutral-500 text-black"
+                    className={classNames(
+                        'absolute flex items-center justify-center bg-neutral-500 text-black',
+                        props.piece.dir === 'down' && 'rotate-90',
+                        props.piece.dir === 'up' && '-rotate-90',
+                    )}
                     style={{
                         height: config.cellSize,
                         width: config.cellSize,
@@ -185,7 +193,11 @@ const RenderCowPiece = (props: { piece: CowPiece }) => {
 
             {props.piece.type === 'tail' && (
                 <div
-                    className="absolute flex items-center justify-center bg-neutral-700 text-white"
+                    className={classNames(
+                        'absolute flex items-center justify-center bg-neutral-700 text-white',
+                        props.piece.dir === 'down' && 'rotate-90',
+                        props.piece.dir === 'up' && '-rotate-90',
+                    )}
                     style={{
                         height: config.cellSize,
                         width: config.cellSize,
