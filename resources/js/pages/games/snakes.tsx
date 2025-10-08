@@ -1,3 +1,4 @@
+import { generateRandomString } from '@/lib/utils';
 import { isAlive } from '@/pages/games/cow';
 import { movePlayers, reducer } from '@/pages/games/game';
 import { Apple, CowColour, CowPiece, PlayerAction } from '@/pages/games/types';
@@ -20,7 +21,7 @@ const generateGrid = () => {
 };
 
 export const Snakes = () => {
-    const [peerId, setPeerId] = useState<string>();
+    const [joinCode, setJoinCode] = useState<string>();
     const peerRef = useRef<Peer>(null);
 
     const [gameState, dispatch] = useReducer(reducer, {
@@ -34,11 +35,12 @@ export const Snakes = () => {
     });
 
     useEffect(() => {
-        const peer = new Peer('cowch-1');
+        const joinCode = generateRandomString(4, true, false, false);
+        const peer = new Peer(`COWCH-${joinCode}`);
         peerRef.current = peer;
 
-        peer.on('open', function (id) {
-            setPeerId(id);
+        peer.on('open', function () {
+            setJoinCode(joinCode);
         });
 
         peer.on('connection', function (conn: DataConnection) {
@@ -100,7 +102,7 @@ export const Snakes = () => {
             <div className="flex w-full justify-between gap-8">
                 <div className="grow">
                     <div className="mb-8">
-                        <p className="text-[#706f6c]] mb-8">Join code: {peerId}</p>
+                        <p className="text-[#706f6c]] mb-8 text-2xl font-extrabold">Join code: {joinCode}</p>
                         <p>
                             <button
                                 className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
