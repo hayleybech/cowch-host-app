@@ -34,7 +34,10 @@ export type PlayerAction =
       }
     | { type: 'pause' };
 
-export type GameNotification = { type: 'paused' } | { type: 'resumed' };
+export type GameNotification =
+    | { type: 'paused' }
+    | { type: 'resumed' }
+    | { type: 'changed_direction'; payload: Direction };
 
 export type GameAction =
     | { type: 'ADD_PLAYER'; payload: { playerId: string; username: string; connection: DataConnection } }

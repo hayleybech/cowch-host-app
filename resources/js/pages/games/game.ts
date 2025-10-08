@@ -26,7 +26,9 @@ import { Dispatch } from 'react';
 
 export function reducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'ADD_PLAYER') {
+        const initialDirection = 'right';
         action.payload.connection.send({ type: state.isPaused ? 'paused' : 'resumed' });
+        action.payload.connection.send({ type: 'changed_direction', payload: initialDirection });
 
         const startXy = chooseStartPos();
 
@@ -36,7 +38,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
                 x: startXy.x - 2,
                 y: startXy.y,
             },
-            dir: 'right',
+            dir: initialDirection,
             nextPiece: undefined,
         };
         const cowMiddle: CowMiddle = {
@@ -45,13 +47,13 @@ export function reducer(state: GameState, action: GameAction): GameState {
                 x: startXy.x - 1,
                 y: startXy.y,
             },
-            dir: 'right',
+            dir: initialDirection,
             nextPiece: cowTail,
         };
         const head: CowHead = {
             type: 'head',
             pos: startXy,
-            dir: 'right',
+            dir: initialDirection,
             nextPiece: cowMiddle,
         };
         const player: Player = {
@@ -83,6 +85,10 @@ export function reducer(state: GameState, action: GameAction): GameState {
             return state;
         }
         player.headPiece.dir = action.payload.direction;
+        broadcastTo(state.connections, player.id, {
+            type: 'changed_direction',
+            payload: action.payload.direction,
+        });
 
         return {
             ...state,
@@ -164,10 +170,15 @@ export function reducer(state: GameState, action: GameAction): GameState {
 
     return state;
 }
+
 const broadcastToAll = (connections: DataConnection[], action: GameNotification) => {
     connections.forEach((connection) => {
         connection.send(action);
     });
+};
+
+const broadcastTo = (connections: DataConnection[], peerId: string, action: GameNotification) => {
+    connections.find((conn) => conn.peer === peerId)?.send(action);
 };
 
 export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
