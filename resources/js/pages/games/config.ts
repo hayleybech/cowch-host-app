@@ -11,7 +11,7 @@ export const sprites = {
     cellSize: 32,
     pixelRatio: 1,
     cow: {
-        black: {
+        holstein: {
             head: {
                 x: 3,
                 y: 0,
@@ -20,12 +20,16 @@ export const sprites = {
                 x: 1,
                 y: 1,
             },
+            bend: {
+                x: 2,
+                y: 0,
+            },
             tail: {
                 x: 0,
                 y: 1,
             },
         },
-        brown: {
+        hereford: {
             head: {
                 x: 3,
                 y: 2,
@@ -34,9 +38,49 @@ export const sprites = {
                 x: 1,
                 y: 3,
             },
+            bend: {
+                x: 2,
+                y: 2,
+            },
             tail: {
                 x: 0,
                 y: 3,
+            },
+        },
+        angus: {
+            head: {
+                x: 3,
+                y: 4,
+            },
+            middle: {
+                x: 1,
+                y: 5,
+            },
+            bend: {
+                x: 2,
+                y: 4,
+            },
+            tail: {
+                x: 0,
+                y: 5,
+            },
+        },
+        highland: {
+            head: {
+                x: 3,
+                y: 6,
+            },
+            middle: {
+                x: 1,
+                y: 7,
+            },
+            bend: {
+                x: 2,
+                y: 6,
+            },
+            tail: {
+                x: 0,
+                y: 7,
             },
         },
     },

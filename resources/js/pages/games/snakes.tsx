@@ -1,5 +1,5 @@
 import { generateRandomString } from '@/lib/utils';
-import { isAlive } from '@/pages/games/cow';
+import { getRotationFromSurroundingPieces, isAlive, shouldUseStraightPiece } from '@/pages/games/cow';
 import { movePlayers, reducer } from '@/pages/games/game';
 import { Apple, CowColour, CowPiece, PlayerAction } from '@/pages/games/types';
 import classNames from 'classnames';
@@ -128,7 +128,7 @@ export const Snakes = () => {
                 </div>
 
                 {/* Grid */}
-                <div className="relative" style={{ backgroundColor: '#5AC54FFF' }}>
+                <div className="relative bg-lime-900">
                     {gameState.cells.map((row, y) => (
                         <div key={y} className="flex w-full flex-nowrap">
                             {row.map((piece, x) => (
@@ -175,7 +175,7 @@ export const Snakes = () => {
 
 export default Snakes;
 
-const RenderCowPiece = (props: { piece: CowPiece; colour: CowColour }) => {
+const RenderCowPiece = (props: { piece: CowPiece; colour: CowColour; prevPiece: CowPiece }) => {
     return (
         <>
             {props.piece.type === 'head' && (
@@ -199,31 +199,54 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowColour }) => {
                     &nbsp;
                 </div>
             )}
-
             {props.piece.type === 'middle' && (
-                <div
-                    className={classNames(
-                        'absolute flex items-center justify-center text-black',
-                        props.piece.dir === 'down' && 'rotate-90',
-                        props.piece.dir === 'up' && '-rotate-90',
-                        props.piece.dir === 'left' && 'rotate-180',
+                <>
+                    {shouldUseStraightPiece(props.piece, props.prevPiece, props.piece.nextPiece) ? (
+                        // if prev and next piece facing same direction, render straight
+                        <div
+                            className={classNames(
+                                'absolute flex items-center justify-center text-black',
+                                props.piece.dir === 'down' && 'rotate-90',
+                                props.piece.dir === 'up' && '-rotate-90',
+                                props.piece.dir === 'left' && 'rotate-180',
+                            )}
+                            style={{
+                                height: config.cellSize,
+                                width: config.cellSize,
+                                top: props.piece.pos.y * config.cellSize,
+                                left: props.piece.pos.x * config.cellSize,
+                                backgroundImage: "url('/sprite.png')",
+                                backgroundSize: spriteBgSize,
+                                backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].middle),
+                            }}
+                        >
+                            &nbsp;
+                        </div>
+                    ) : (
+                        <div
+                            className={classNames(
+                                'absolute flex items-center justify-center text-black',
+                                getRotationFromSurroundingPieces(props.piece, props.prevPiece, props.piece.nextPiece),
+                            )}
+                            style={{
+                                height: config.cellSize,
+                                width: config.cellSize,
+                                top: props.piece.pos.y * config.cellSize,
+                                left: props.piece.pos.x * config.cellSize,
+                                backgroundImage: "url('/sprite.png')",
+                                backgroundSize: spriteBgSize,
+                                backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].bend),
+                            }}
+                        >
+                            &nbsp;
+                        </div>
                     )}
-                    style={{
-                        height: config.cellSize,
-                        width: config.cellSize,
-                        top: props.piece.pos.y * config.cellSize,
-                        left: props.piece.pos.x * config.cellSize,
-                        backgroundImage: "url('/sprite.png')",
-                        backgroundSize: spriteBgSize,
-                        backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].middle),
-                    }}
-                >
-                    &nbsp;
-                </div>
+                </>
             )}
 
-            {!!props.piece.nextPiece && <RenderCowPiece piece={props.piece.nextPiece} colour={props.colour} />}
-
+            {!!props.piece.nextPiece && (
+                <RenderCowPiece piece={props.piece.nextPiece} colour={props.colour} prevPiece={props.piece} />
+            )}
             {props.piece.type === 'tail' && (
                 <div
                     className={classNames(

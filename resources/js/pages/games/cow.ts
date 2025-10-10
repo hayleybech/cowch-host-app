@@ -110,3 +110,30 @@ function posIsEqual(posA: Position, posB: Position): boolean {
 export function isAlive(player: Player): player is AlivePlayer {
     return player.isAlive;
 }
+
+export function shouldUseStraightPiece(piece: CowPiece, prevPiece: CowPiece, nextPiece: CowPiece): boolean {
+    return prevPiece.pos.x === nextPiece.pos.x || prevPiece.pos.y === nextPiece.pos.y;
+}
+
+// Rotates the "bend" sprite to connect to the leading and trailing pieces
+export function getRotationFromSurroundingPieces(piece: CowPiece, prevPiece: CowPiece, nextPiece: CowPiece): string {
+    if (
+        (prevPiece.pos.x > piece.pos.x && nextPiece.pos.y > piece.pos.y) ||
+        (nextPiece.pos.x > piece.pos.x && prevPiece.pos.y > piece.pos.y)
+    ) {
+        return 'rotate-0';
+    }
+    if (
+        (prevPiece.pos.y > piece.pos.y && nextPiece.pos.x < piece.pos.x) ||
+        (nextPiece.pos.y > piece.pos.y && prevPiece.pos.x < piece.pos.x)
+    ) {
+        return 'rotate-90';
+    }
+    if (
+        (prevPiece.pos.y < piece.pos.y && nextPiece.pos.x < piece.pos.x) ||
+        (nextPiece.pos.y < piece.pos.y && prevPiece.pos.x < piece.pos.x)
+    ) {
+        return 'rotate-180';
+    }
+    return 'rotate-270';
+}

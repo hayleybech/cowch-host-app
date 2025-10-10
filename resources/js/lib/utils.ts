@@ -22,3 +22,7 @@ export function generateRandomString(length: number, uppercase: boolean, lowerca
     }
     return result;
 }
+
+export function getRandomElement<T>(array: T[]): T {
+    return array[Math.floor(Math.random() * array.length)];
+}
