@@ -107,8 +107,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'REMOVE_APPLE') {
         return {
             ...state,
-            apples: state.apples.toSpliced(
-                state.apples.findIndex((apple) => apple.pos.x === action.payload.x && apple.pos.y === action.payload.y),
+            food: state.food.toSpliced(
+                state.food.findIndex((apple) => apple.pos.x === action.payload.x && apple.pos.y === action.payload.y),
                 1,
             ),
         };
@@ -122,7 +122,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
             };
         }
 
-        const apples = state.apples;
+        const apples = state.food;
         apples.push({
             type: 'apple',
             pos: chooseStartPos(),
@@ -130,7 +130,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
 
         return {
             ...state,
-            apples,
+            food: apples,
             ticksSinceApple: 0,
         };
     }
@@ -190,7 +190,7 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
         }
 
         const tempPlayer = { ...player };
-        tempPlayer.headPiece = move(state.apples, player.headPiece);
+        tempPlayer.headPiece = move(state.food, player.headPiece);
         return tempPlayer;
     });
 
@@ -201,7 +201,7 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
         }
 
         // Check for apple
-        const appleCollided = playerHasCollidedWithAnyApple(player.headPiece.pos, state.apples);
+        const appleCollided = playerHasCollidedWithAnyApple(player.headPiece.pos, state.food);
         if (player.headPiece && appleCollided) {
             // Remove Apple
             dispatch({ type: 'REMOVE_APPLE', payload: { x: appleCollided.pos.x, y: appleCollided.pos.y } });

@@ -1,4 +1,4 @@
-import { generateRandomString } from '@/lib/utils';
+import { generateRandomString, getRandomElement } from '@/lib/utils';
 import { getRotationFromSurroundingPieces, isAlive, shouldUseStraightPiece } from '@/pages/games/cow';
 import { movePlayers, reducer } from '@/pages/games/game';
 import { Apple, CowColour, CowPiece, PlayerAction } from '@/pages/games/types';
@@ -13,7 +13,9 @@ const generateGrid = () => {
     for (let y = 0; y < config.rows; y++) {
         const row = [];
         for (let x = 0; x < config.cols; x++) {
-            row.push(null);
+            row.push({
+                rotation: getRandomElement(['rotate-0', 'rotate-90', 'rotate-180', 'rotate-270']),
+            });
         }
         cellsTemp.push(row);
     }
@@ -26,7 +28,7 @@ export const Snakes = () => {
 
     const [gameState, dispatch] = useReducer(reducer, {
         players: [],
-        apples: [],
+        food: [],
         cells: generateGrid(),
         ticksSinceApple: 0,
         isPaused: true,
@@ -131,14 +133,21 @@ export const Snakes = () => {
                 <div className="relative bg-lime-900">
                     {gameState.cells.map((row, y) => (
                         <div key={y} className="flex w-full flex-nowrap">
-                            {row.map((piece, x) => (
+                            {row.map((cell, x) => (
                                 <div
                                     key={x}
-                                    style={{ width: config.cellSize, height: config.cellSize }}
+                                    style={{
+                                        width: config.cellSize,
+                                        height: config.cellSize,
+                                        backgroundImage: "url('/sprite.png')",
+                                        backgroundSize: spriteBgSize,
+                                        backgroundPosition: getSpriteBgPos(sprites.ground.grass),
+                                    }}
                                     className={classNames(
                                         'flex items-center justify-center text-lg',
-                                        x < row.length - 1 && 'border-r-0',
-                                        y < gameState.cells.length - 1 && 'border-b-0',
+                                        cell.rotation,
+                                        // x < row.length - 1 && 'border-r-0',
+                                        // y < gameState.cells.length - 1 && 'border-b-0',
                                     )}
                                 >
                                     &nbsp;
@@ -149,11 +158,16 @@ export const Snakes = () => {
                     {gameState.players.map(
                         (player) =>
                             isAlive(player) && (
-                                <RenderCowPiece key={player.id} piece={player.headPiece} colour={player.cowColour} />
+                                <RenderCowPiece
+                                    key={player.id}
+                                    piece={player.headPiece}
+                                    colour={player.cowColour}
+                                    prevPiece={player.headPiece}
+                                />
                             ),
                     )}
-                    {gameState.apples.map((apple) => (
-                        <RenderApple apple={apple} key={`apple-[${apple.pos.x},${apple.pos.y}]`} />
+                    {gameState.food.map((tuft) => (
+                        <RenderTuft tuft={tuft} key={`tuft-[${tuft.pos.x},${tuft.pos.y}]`} />
                     ))}
                     {gameState.isPaused && (
                         <div className="absolute top-0 right-0 bottom-0 left-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
@@ -272,16 +286,19 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowColour; prevPiece: 
     );
 };
 
-const RenderApple = (props: { apple: Apple }) => (
+const RenderTuft = (props: { tuft: Apple }) => (
     <div
-        className="absolute flex items-center justify-center bg-red-800 text-white"
+        className="absolute flex items-center justify-center text-white"
         style={{
             height: config.cellSize,
             width: config.cellSize,
-            top: props.apple.pos.y * config.cellSize,
-            left: props.apple.pos.x * config.cellSize,
+            top: props.tuft.pos.y * config.cellSize,
+            left: props.tuft.pos.x * config.cellSize,
+            backgroundImage: "url('/sprite.png')",
+            backgroundSize: spriteBgSize,
+            backgroundPosition: getSpriteBgPos(sprites.food.tuft),
         }}
     >
-        A
+        &nbsp;
     </div>
 );

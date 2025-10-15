@@ -10,6 +10,18 @@ export const config = {
 export const sprites = {
     cellSize: 32,
     pixelRatio: 1,
+    ground: {
+        grass: {
+            x: 0,
+            y: 0,
+        },
+    },
+    food: {
+        tuft: {
+            x: 1,
+            y: 0,
+        },
+    },
     cow: {
         holstein: {
             head: {

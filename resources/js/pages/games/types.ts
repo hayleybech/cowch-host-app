@@ -13,10 +13,14 @@ export type Position = {
     y: number;
 };
 
+export type Cell = {
+    rotation: string;
+};
+
 export type GameState = {
     players: Player[];
-    apples: Apple[];
-    cells: (Piece | null)[][];
+    food: Apple[];
+    cells: Cell[][];
     ticksSinceApple: number;
     isPaused: boolean;
     resumeGracePeriodSeconds: number;
