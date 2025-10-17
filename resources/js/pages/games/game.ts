@@ -1,4 +1,3 @@
-import { getRandomElement } from '@/lib/utils';
 import { config } from '@/pages/games/config';
 import {
     chooseStartPos,
@@ -12,7 +11,6 @@ import {
 } from '@/pages/games/cow';
 import {
     AlivePlayer,
-    CowColours,
     CowHead,
     CowMiddle,
     CowPiece,
@@ -64,7 +62,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
             headPiece: head,
             score: 0,
             isAlive: true,
-            cowColour: getRandomElement(CowColours),
+            breed: action.payload.breed,
+            // breed: getRandomElement(CowBreeds),
         };
 
         return {

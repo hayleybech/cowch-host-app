@@ -12,18 +12,18 @@ export const sprites = {
     pixelRatio: 1,
     ground: {
         grass: {
-            x: 0,
+            x: 4,
             y: 0,
         },
     },
     food: {
         tuft: {
-            x: 1,
-            y: 0,
+            x: 3,
+            y: 1,
         },
     },
     cow: {
-        holstein: {
+        holstein_friesian: {
             head: {
                 x: 3,
                 y: 0,
@@ -39,6 +39,10 @@ export const sprites = {
             tail: {
                 x: 0,
                 y: 1,
+            },
+            sideView: {
+                x: 0,
+                y: 0,
             },
         },
         hereford: {
@@ -58,6 +62,10 @@ export const sprites = {
                 x: 0,
                 y: 3,
             },
+            sideView: {
+                x: 0,
+                y: 2,
+            },
         },
         angus: {
             head: {
@@ -76,6 +84,10 @@ export const sprites = {
                 x: 0,
                 y: 5,
             },
+            sideView: {
+                x: 0,
+                y: 4,
+            },
         },
         highland: {
             head: {
@@ -93,6 +105,10 @@ export const sprites = {
             tail: {
                 x: 0,
                 y: 7,
+            },
+            sideView: {
+                x: 0,
+                y: 6,
             },
         },
     },

@@ -30,7 +30,10 @@ export type GameState = {
 export type PlayerAction =
     | {
           type: 'join';
-          payload: string;
+          payload: {
+              username: string;
+              breed: CowBreed;
+          };
       }
     | {
           type: 'move';
@@ -44,7 +47,10 @@ export type GameNotification =
     | { type: 'changed_direction'; payload: Direction };
 
 export type GameAction =
-    | { type: 'ADD_PLAYER'; payload: { playerId: string; username: string; connection: DataConnection } }
+    | {
+          type: 'ADD_PLAYER';
+          payload: { playerId: string; username: string; breed: CowBreed; connection: DataConnection };
+      }
     | { type: 'CHANGE_DIRECTION'; payload: { playerId: string; direction: Direction } }
     | { type: 'UPDATE_PLAYERS'; payload: Player[] }
     | { type: 'SPAWN_APPLE' }
@@ -58,18 +64,19 @@ export type AlivePlayer = {
     score: number;
     isAlive: true;
     headPiece: CowHead;
-    cowColour: CowColour;
+    breed: CowBreed;
 };
 export type DeadPlayer = {
     id: string;
     username: string;
     score: number;
     isAlive: false;
+    breed: CowBreed;
 };
 export type Player = AlivePlayer | DeadPlayer;
 
-export type CowColour = keyof typeof sprites.cow;
-export const CowColours = Object.keys(sprites.cow) as CowColour[];
+export type CowBreed = keyof typeof sprites.cow;
+export const CowBreeds = Object.keys(sprites.cow) as CowBreed[];
 
 export type CowPiece = CowHead | CowMiddle | CowTail;
 export type CowHead = {

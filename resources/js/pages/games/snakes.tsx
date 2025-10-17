@@ -1,7 +1,7 @@
 import { generateRandomString, getRandomElement } from '@/lib/utils';
 import { getRotationFromSurroundingPieces, isAlive, shouldUseStraightPiece } from '@/pages/games/cow';
 import { movePlayers, reducer } from '@/pages/games/game';
-import { Apple, CowColour, CowPiece, PlayerAction } from '@/pages/games/types';
+import { Apple, CowBreed, CowPiece, PlayerAction } from '@/pages/games/types';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
@@ -51,7 +51,12 @@ export const Snakes = () => {
                 if (action.type === 'join') {
                     dispatch({
                         type: 'ADD_PLAYER',
-                        payload: { playerId: conn.peer, username: action.payload, connection: conn },
+                        payload: {
+                            playerId: conn.peer,
+                            username: action.payload.username,
+                            breed: action.payload.breed,
+                            connection: conn,
+                        },
                     });
                 }
                 if (action.type === 'move') {
@@ -116,11 +121,14 @@ export const Snakes = () => {
                     </div>
                     {/* Scoreboard */}
                     <div>
-                        <ul>
+                        <ul className="flex flex-col gap-4">
                             {gameState.players.map((player) => (
                                 <li key={player.id} className="flex justify-between gap-8">
-                                    <div className="font-extrabold">
-                                        {player.username} {!player.isAlive && '(Dead)'}
+                                    <div className="flex gap-2">
+                                        <CowAvatar breed={player.breed} />
+                                        <div className="font-extrabold">
+                                            {player.username} {!player.isAlive && '(Dead)'}
+                                        </div>
                                     </div>
                                     <div>{player.score}</div>
                                 </li>
@@ -161,7 +169,7 @@ export const Snakes = () => {
                                 <RenderCowPiece
                                     key={player.id}
                                     piece={player.headPiece}
-                                    colour={player.cowColour}
+                                    colour={player.breed}
                                     prevPiece={player.headPiece}
                                 />
                             ),
@@ -189,7 +197,21 @@ export const Snakes = () => {
 
 export default Snakes;
 
-const RenderCowPiece = (props: { piece: CowPiece; colour: CowColour; prevPiece: CowPiece }) => {
+const CowAvatar = (props: { breed: CowBreed }) => (
+    <div
+        style={{
+            height: config.cellSize,
+            width: config.cellSize * 2,
+            backgroundImage: "url('/sprite.png')",
+            backgroundSize: spriteBgSize,
+            backgroundPosition: getSpriteBgPos(sprites.cow[props.breed].sideView),
+        }}
+    >
+        &nbsp;
+    </div>
+);
+
+const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: CowPiece }) => {
     return (
         <>
             {props.piece.type === 'head' && (
