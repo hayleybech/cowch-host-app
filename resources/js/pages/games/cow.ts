@@ -2,7 +2,7 @@ import { getRandomNumber } from '@/lib/utils';
 import { config } from './config';
 import { AlivePlayer, Apple, CowPiece, Player, Position } from './types';
 
-export const chooseStartPos = (): Position => ({
+export const getRandomPosition = (): Position => ({
     x: getRandomNumber(2, config.cols - 2), // Ensure tail doesn't spawn off left edge (all players spawn facing right)
     y: getRandomNumber(1, config.rows - 2),
 });
@@ -103,7 +103,7 @@ export function playerHasCollidedWithAnyWall(player: AlivePlayer): boolean {
     );
 }
 
-function posIsEqual(posA: Position, posB: Position): boolean {
+export function posIsEqual(posA: Position, posB: Position): boolean {
     return posA.x === posB.x && posA.y === posB.y;
 }
 

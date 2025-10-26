@@ -1,13 +1,12 @@
 import { config } from '@/pages/games/config';
 import {
-    chooseStartPos,
-    Direction,
+    Direction, getRandomPosition,
     getSecondLastPiece,
     isAlive,
     move,
     playerHasCollidedWithAnyApple,
     playerHasCollidedWithAnyPlayer,
-    playerHasCollidedWithAnyWall,
+    playerHasCollidedWithAnyWall, posIsEqual
 } from '@/pages/games/cow';
 import {
     AlivePlayer,
@@ -19,7 +18,7 @@ import {
     GameNotification,
     GameState,
     Player,
-    Position,
+    Position
 } from '@/pages/games/types';
 import { DataConnection } from 'peerjs';
 import { Dispatch } from 'react';
@@ -30,7 +29,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         action.payload.connection.send({ type: state.isPaused ? 'paused' : 'resumed' });
         action.payload.connection.send({ type: 'changed_direction', payload: initialDirection });
 
-        const startXy = chooseStartPos();
+        const startXy = findAvailablePosition(state);
 
         const cowTail: CowTail = {
             type: 'tail',
@@ -124,7 +123,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         const apples = state.food;
         apples.push({
             type: 'apple',
-            pos: chooseStartPos(),
+            pos: findAvailablePosition(state)
         });
 
         return {
@@ -169,6 +168,46 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     return state;
+}
+
+// @todo make this more efficient
+// - this will become slower the less room there is on the board
+// - it would be more performant to generate a list of possible positions,
+//      then randomly choose from those.
+const findAvailablePosition = (state: GameState) => {
+    const pos = getRandomPosition();
+
+    if(!positionHasPiece(state, pos)) {
+        return pos;
+    }
+    return findAvailablePosition(state);
+}
+
+const positionHasPiece = (state: GameState, pos: Position) => {
+    const posHasPlayer = state.players.some((player) => {
+        if (!player.isAlive) {
+            return false;
+        }
+        return cowHasPieceInPosition(player.headPiece, pos)
+    });
+
+    const posHasFood = state.food.some((piece) => {
+        return posIsEqual(piece.pos, pos);
+    });
+
+    return posHasPlayer || posHasFood;
+}
+
+const cowHasPieceInPosition = (piece: CowPiece, pos: Position) => {
+    if(posIsEqual(piece.pos, pos)) {
+        return true;
+    }
+
+    if(!piece.nextPiece) {
+        return false;
+    }
+
+    return cowHasPieceInPosition(piece.nextPiece, pos);
 }
 
 const broadcastToAll = (connections: DataConnection[], action: GameNotification) => {
