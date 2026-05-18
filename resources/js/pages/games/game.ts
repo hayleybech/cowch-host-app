@@ -86,10 +86,24 @@ export function reducer(state: GameState, action: GameAction): GameState {
         if (!player || !player.headPiece || !player.headPiece.pos) {
             return state;
         }
-        player.headPiece.dir = action.payload.direction;
+
+        const currentDir = player.headPiece.dir;
+        const requestedDir = action.payload.direction;
+
+        // Validate input direction (prevent neck snapping)
+        if (
+            (currentDir === 'up' && requestedDir === 'down') ||
+            (currentDir === 'down' && requestedDir === 'up') ||
+            (currentDir === 'left' && requestedDir === 'right') ||
+            (currentDir === 'right' && requestedDir === 'left')
+        ) {
+            return state;
+        }
+
+        player.headPiece.dir = requestedDir;
         broadcastTo(state.connections, player.id, {
             type: 'changed_direction',
-            payload: action.payload.direction,
+            payload: requestedDir,
         });
 
         return {
