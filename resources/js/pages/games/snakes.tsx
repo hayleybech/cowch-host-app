@@ -35,6 +35,7 @@ export const Snakes = () => {
         isPaused: true,
         resumeGracePeriodSeconds: 0,
         connections: [],
+        clouds: [],
     });
 
     useEffect(() => {
@@ -64,6 +65,12 @@ export const Snakes = () => {
                     dispatch({
                         type: 'CHANGE_DIRECTION',
                         payload: { playerId: conn.peer, direction: action.payload },
+                    });
+                }
+                if (action.type === 'drop') {
+                    dispatch({
+                        type: 'DROP_TRAP',
+                        payload: { playerId: conn.peer },
                     });
                 }
                 if (action.type === 'pause') {
@@ -179,6 +186,9 @@ export const Snakes = () => {
                     {gameState.food.map((food) => (
                         <RenderFood food={food} key={`food-[${food.pos.x},${food.pos.y}]`} />
                     ))}
+                    {gameState.clouds.map((cloud, index) => (
+                        <RenderCloud cloud={cloud} key={`cloud-${index}`} />
+                    ))}
                     {gameState.isPaused && (
                         <div className="absolute top-0 right-0 bottom-0 left-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
                             {gameState.resumeGracePeriodSeconds > 0 ? (
@@ -212,6 +222,26 @@ const CowAvatar = (props: { breed: CowBreed }) => (
         &nbsp;
     </div>
 );
+
+const RenderCloud = ({ cloud }: { cloud: { pos: { x: number; y: number } } }) => {
+    const size = config.cellSize * 3;
+    const offset = (size - config.cellSize) / 2;
+
+    return (
+        <div
+            className="absolute rounded-full bg-white opacity-80"
+            style={{
+                height: size,
+                width: size,
+                top: cloud.pos.y * config.cellSize - offset,
+                left: cloud.pos.x * config.cellSize - offset,
+                filter: 'blur(8px)',
+                transition: 'opacity 0.5s ease-out',
+                zIndex: 10,
+            }}
+        />
+    );
+};
 
 const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: CowPiece }) => {
     return (
@@ -325,7 +355,9 @@ const RenderFood = (props: { food: Food }) => (
                     ? sprites.food.tuft
                     : props.food.type === 'honey'
                     ? sprites.food.honey
-                    : sprites.food.milk,
+                    : props.food.type === 'milk'
+                    ? sprites.food.milk
+                    : sprites.food.bean,
             ),
         }}
     >

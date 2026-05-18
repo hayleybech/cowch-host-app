@@ -3,6 +3,7 @@ import { config } from '@/pages/games/config';
 import {
     Direction, getRandomPosition,
     getSecondLastPiece,
+    getTail,
     isAlive,
     move,
     playerHasCollidedWithAnyFood,
@@ -65,6 +66,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
             breed: action.payload.breed,
             slowedTicks: 0,
             boostedTicks: 0,
+            canDropCloud: false,
             // breed: getRandomElement(CowBreeds),
         };
 
@@ -183,10 +185,45 @@ export function reducer(state: GameState, action: GameAction): GameState {
         };
     }
 
+    if (action.type === 'DROP_TRAP') {
+        const player = state.players.find((p) => p.id === action.payload.playerId);
+        if (!player || !isAlive(player) || !player.canDropCloud) {
+            return state;
+        }
+
+        const tail = getTail(player.headPiece);
+        const newCloud = {
+            pos: { ...tail.pos },
+            ticksRemaining: config.cloudDurationTicks,
+        };
+
+        const updatedPlayers = state.players.map((p) => {
+            if (p.id === action.payload.playerId && isAlive(p)) {
+                broadcastTo(state.connections, p.id, { type: 'powerup_used' });
+                return { ...p, canDropCloud: false };
+            }
+            return p;
+        });
+
+        return {
+            ...state,
+            players: updatedPlayers,
+            clouds: [...state.clouds, newCloud],
+        };
+    }
+
     if (action.type === 'TICK') {
+        const updatedClouds = state.clouds
+            .map((cloud) => ({
+                ...cloud,
+                ticksRemaining: cloud.ticksRemaining - 1,
+            }))
+            .filter((cloud) => cloud.ticksRemaining > 0);
+
         return {
             ...state,
             tickCount: state.tickCount + 1,
+            clouds: updatedClouds,
         };
     }
 
@@ -218,7 +255,11 @@ const positionHasPiece = (state: GameState, pos: Position) => {
         return posIsEqual(piece.pos, pos);
     });
 
-    return posHasPlayer || posHasFood;
+    const posHasCloud = state.clouds.some((cloud) => {
+        return posIsEqual(cloud.pos, pos);
+    });
+
+    return posHasPlayer || posHasFood || posHasCloud;
 }
 
 const cowHasPieceInPosition = (piece: CowPiece, pos: Position) => {
@@ -314,6 +355,11 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
 
             if (foodCollided.type === 'milk') {
                 player.boostedTicks = config.boostedTicksDuration;
+            }
+
+            if (foodCollided.type === 'bean') {
+                player.canDropCloud = true;
+                broadcastTo(state.connections, player.id, { type: 'powerup_stored' });
             }
         }
         return player;

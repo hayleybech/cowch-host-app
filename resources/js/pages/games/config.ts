@@ -9,12 +9,14 @@ export const config = {
         tuft: 0.7,
         honey: 0.5,
         milk: 0.5,
+        bean: 0.3,
     },
     ticksPerSlowMove: 4,
     ticksPerRegularMove: 2,
     ticksPerBoostMove: 1,
     slowedTicksDuration: 20,
     boostedTicksDuration: 20,
+    cloudDurationTicks: 40,
     resumeGracePeriod: 3,
 } as const;
 
@@ -39,6 +41,10 @@ export const sprites = {
         milk: {
             x: 3,
             y: 5,
+        },
+        bean: {
+            x: 3,
+            y: 3,
         },
     },
     cow: {

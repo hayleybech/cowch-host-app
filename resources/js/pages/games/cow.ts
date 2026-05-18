@@ -54,6 +54,13 @@ export function playerHasCollidedWithAnyFood(playerPos: Position, food: Food[]):
     return food.find((f) => posIsEqual(playerPos, f.pos));
 }
 
+export function getTail(piece: CowPiece): CowTail {
+    if (piece.type === 'tail') {
+        return piece;
+    }
+    return getTail(piece.nextPiece);
+}
+
 export function getSecondLastPiece(piece: CowPiece, prevPiece: CowPiece): CowPiece {
     if (!piece.nextPiece) {
         return prevPiece;

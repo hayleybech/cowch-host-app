@@ -2,8 +2,8 @@ import { sprites } from '@/pages/games/config';
 import { Direction } from '@/pages/games/cow';
 import { DataConnection } from 'peerjs';
 
-export type Piece = Tuft | Honey | Milk | CowHead | CowMiddle | CowTail;
-export type Food = Tuft | Honey | Milk;
+export type Piece = Tuft | Honey | Milk | Bean | CowHead | CowMiddle | CowTail;
+export type Food = Tuft | Honey | Milk | Bean;
 export type Tuft = {
     type: 'tuft';
     pos: Position;
@@ -17,6 +17,16 @@ export type Honey = {
 export type Milk = {
     type: 'milk';
     pos: Position;
+};
+
+export type Bean = {
+    type: 'bean';
+    pos: Position;
+};
+
+export type Cloud = {
+    pos: Position;
+    ticksRemaining: number;
 };
 
 export type Position = {
@@ -37,6 +47,7 @@ export type GameState = {
     isPaused: boolean;
     resumeGracePeriodSeconds: number;
     connections: DataConnection[];
+    clouds: Cloud[];
 };
 
 export type PlayerAction =
@@ -51,11 +62,14 @@ export type PlayerAction =
           type: 'move';
           payload: Direction;
       }
+    | { type: 'drop' }
     | { type: 'pause' };
 
 export type GameNotification =
     | { type: 'paused' }
     | { type: 'resumed' }
+    | { type: 'powerup_stored' }
+    | { type: 'powerup_used' }
     | { type: 'changed_direction'; payload: Direction };
 
 export type GameAction =
@@ -69,6 +83,7 @@ export type GameAction =
     | { type: 'REMOVE_FOOD'; payload: Position }
     | { type: 'REQUEST_TOGGLE_PAUSE' }
     | { type: 'TICK_RESUME_COUNTDOWN' }
+    | { type: 'DROP_TRAP'; payload: { playerId: string } }
     | { type: 'TICK' };
 
 export type AlivePlayer = {
@@ -80,6 +95,7 @@ export type AlivePlayer = {
     breed: CowBreed;
     slowedTicks: number;
     boostedTicks: number;
+    canDropCloud: boolean;
 };
 export type DeadPlayer = {
     id: string;
