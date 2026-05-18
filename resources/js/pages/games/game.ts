@@ -63,6 +63,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
             return state;
         }
 
+        broadcastTo(state.connections, pending.id, { type: 'joined' });
         broadcastTo(state.connections, pending.id, {
             type: 'changed_direction',
             payload: initialDirection,

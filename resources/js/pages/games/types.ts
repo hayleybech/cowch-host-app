@@ -82,6 +82,7 @@ export type GameNotification =
     | { type: 'resumed' }
     | { type: 'powerup_stored' }
     | { type: 'powerup_used' }
+    | { type: 'joined' }
     | { type: 'player_joined'; payload: CowBreed[] }
     | { type: 'changed_direction'; payload: Direction };
 
