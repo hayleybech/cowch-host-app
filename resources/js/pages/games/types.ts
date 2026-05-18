@@ -47,14 +47,26 @@ export type GameState = {
     isPaused: boolean;
     resumeGracePeriodSeconds: number;
     connections: DataConnection[];
+    pendingConnections: PendingConnection[];
     clouds: Cloud[];
+};
+
+export type PendingConnection = {
+    id: string;
+    username: string;
+    connection: DataConnection;
 };
 
 export type PlayerAction =
     | {
-          type: 'join';
+          type: 'connect';
           payload: {
               username: string;
+          };
+      }
+    | {
+          type: 'join';
+          payload: {
               breed: CowBreed;
           };
       }
@@ -70,12 +82,17 @@ export type GameNotification =
     | { type: 'resumed' }
     | { type: 'powerup_stored' }
     | { type: 'powerup_used' }
+    | { type: 'player_joined'; payload: CowBreed[] }
     | { type: 'changed_direction'; payload: Direction };
 
 export type GameAction =
     | {
-          type: 'ADD_PLAYER';
-          payload: { playerId: string; username: string; breed: CowBreed; connection: DataConnection };
+          type: 'CONNECT_PLAYER';
+          payload: { playerId: string; username: string; connection: DataConnection };
+      }
+    | {
+          type: 'JOIN_PLAYER';
+          payload: { playerId: string; breed: CowBreed };
       }
     | { type: 'CHANGE_DIRECTION'; payload: { playerId: string; direction: Direction } }
     | { type: 'UPDATE_PLAYERS'; payload: Player[] }

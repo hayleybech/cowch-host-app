@@ -35,6 +35,7 @@ export const Snakes = () => {
         isPaused: true,
         resumeGracePeriodSeconds: 0,
         connections: [],
+        pendingConnections: [],
         clouds: [],
     });
 
@@ -50,14 +51,22 @@ export const Snakes = () => {
         peer.on('connection', function (conn: DataConnection) {
             conn.on('data', function (data: unknown) {
                 const action = data as PlayerAction;
-                if (action.type === 'join') {
+                if (action.type === 'connect') {
                     dispatch({
-                        type: 'ADD_PLAYER',
+                        type: 'CONNECT_PLAYER',
                         payload: {
                             playerId: conn.peer,
                             username: action.payload.username,
-                            breed: action.payload.breed,
                             connection: conn,
+                        },
+                    });
+                }
+                if (action.type === 'join') {
+                    dispatch({
+                        type: 'JOIN_PLAYER',
+                        payload: {
+                            playerId: conn.peer,
+                            breed: action.payload.breed,
                         },
                     });
                 }

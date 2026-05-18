@@ -12,6 +12,7 @@ import {
 } from '@/pages/games/cow';
 import {
     AlivePlayer,
+    CowBreeds,
     CowHead,
     CowMiddle,
     CowPiece,
@@ -26,10 +27,46 @@ import { DataConnection } from 'peerjs';
 import { Dispatch } from 'react';
 
 export function reducer(state: GameState, action: GameAction): GameState {
-    if (action.type === 'ADD_PLAYER') {
-        const initialDirection = 'right';
+    if (action.type === 'CONNECT_PLAYER') {
+        const nextConnections = [...state.connections, action.payload.connection];
+        const nextPending = [
+            ...state.pendingConnections,
+            {
+                id: action.payload.playerId,
+                username: action.payload.username,
+                connection: action.payload.connection,
+            },
+        ];
+
+        const chosenBreeds = state.players.map((p) => p.breed);
+        const availableBreeds = CowBreeds.filter((breed) => !chosenBreeds.includes(breed));
+
+        action.payload.connection.send({ type: 'player_joined', payload: availableBreeds });
         action.payload.connection.send({ type: state.isPaused ? 'paused' : 'resumed' });
-        action.payload.connection.send({ type: 'changed_direction', payload: initialDirection });
+
+        return {
+            ...state,
+            connections: nextConnections,
+            pendingConnections: nextPending,
+        };
+    }
+
+    if (action.type === 'JOIN_PLAYER') {
+        const initialDirection = 'right';
+        const pending = state.pendingConnections.find((p) => p.id === action.payload.playerId);
+        if (!pending) {
+            return state;
+        }
+
+        const breedIsTaken = state.players.some((p) => p.breed === action.payload.breed);
+        if (breedIsTaken) {
+            return state;
+        }
+
+        broadcastTo(state.connections, pending.id, {
+            type: 'changed_direction',
+            payload: initialDirection,
+        });
 
         const startXy = findAvailablePosition(state);
 
@@ -58,8 +95,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
             nextPiece: cowMiddle,
         };
         const player: Player = {
-            id: action.payload.playerId,
-            username: action.payload.username,
+            id: pending.id,
+            username: pending.username,
             headPiece: head,
             score: 0,
             isAlive: true,
@@ -67,13 +104,23 @@ export function reducer(state: GameState, action: GameAction): GameState {
             slowedTicks: 0,
             boostedTicks: 0,
             canDropCloud: false,
-            // breed: getRandomElement(CowBreeds),
         };
+
+        const nextPlayers = [...state.players, player];
+        const nextPending = state.pendingConnections.filter((p) => p.id !== action.payload.playerId);
+
+        const chosenBreeds = nextPlayers.map((p) => p.breed);
+        const availableBreeds = CowBreeds.filter((breed) => !chosenBreeds.includes(breed));
+
+        broadcastToAll(state.connections, {
+            type: 'player_joined',
+            payload: availableBreeds,
+        });
 
         return {
             ...state,
-            players: [...state.players, player],
-            connections: [...state.connections, action.payload.connection],
+            players: nextPlayers,
+            pendingConnections: nextPending,
         };
     }
 
