@@ -6,7 +6,7 @@ export const config = {
     // ticksPerFood: 20,
     ticksPerFood: 6, // debug
     foodWeights: {
-        apple: 0.7,
+        tuft: 0.7,
         honey: 0.5,
         milk: 0.5,
     },

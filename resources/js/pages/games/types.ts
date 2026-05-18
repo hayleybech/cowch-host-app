@@ -2,10 +2,10 @@ import { sprites } from '@/pages/games/config';
 import { Direction } from '@/pages/games/cow';
 import { DataConnection } from 'peerjs';
 
-export type Piece = Apple | Honey | Milk | CowHead | CowMiddle | CowTail;
-export type Food = Apple | Honey | Milk;
-export type Apple = {
-    type: 'apple';
+export type Piece = Tuft | Honey | Milk | CowHead | CowMiddle | CowTail;
+export type Food = Tuft | Honey | Milk;
+export type Tuft = {
+    type: 'tuft';
     pos: Position;
 };
 

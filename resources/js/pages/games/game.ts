@@ -276,7 +276,7 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
             // Remove Food
             dispatch({ type: 'REMOVE_FOOD', payload: { x: foodCollided.pos.x, y: foodCollided.pos.y } });
 
-            if (foodCollided.type === 'apple') {
+            if (foodCollided.type === 'tuft') {
                 // Grow tail
                 const playerOld = state.players.find((playerA) => playerA.id === player.id) as AlivePlayer;
                 const slpOld = getSecondLastPiece(playerOld.headPiece.nextPiece, playerOld.headPiece);

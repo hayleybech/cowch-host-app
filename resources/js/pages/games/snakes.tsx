@@ -321,7 +321,7 @@ const RenderFood = (props: { food: Food }) => (
             backgroundImage: "url('/sprite.png')",
             backgroundSize: spriteBgSize,
             backgroundPosition: getSpriteBgPos(
-                props.food.type === 'apple'
+                props.food.type === 'tuft'
                     ? sprites.food.tuft
                     : props.food.type === 'honey'
                     ? sprites.food.honey
