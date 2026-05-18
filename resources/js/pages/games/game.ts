@@ -1,3 +1,4 @@
+import { getWeightedRandomElement } from '@/lib/utils';
 import { config } from '@/pages/games/config';
 import {
     Direction, getRandomPosition,
@@ -63,6 +64,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
             isAlive: true,
             breed: action.payload.breed,
             slowedTicks: 0,
+            boostedTicks: 0,
             // breed: getRandomElement(CowBreeds),
         };
 
@@ -111,7 +113,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'SPAWN_FOOD') {
-        if (state.ticksSinceFood < config.foodSpawnRate) {
+        if (state.ticksSinceFood < config.ticksPerFood) {
             return {
                 ...state,
                 ticksSinceFood: state.ticksSinceFood + 1,
@@ -119,11 +121,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         }
 
         const food = [...state.food];
-        const random = Math.random();
-        let foodType: 'apple' | 'honey' = 'apple';
-        if (random > config.foodWeights.apple) {
-            foodType = 'honey';
-        }
+        const foodType = getWeightedRandomElement(config.foodWeights);
 
         food.push({
             type: foodType,
@@ -242,6 +240,13 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
         }
 
         tempPlayer.headPiece = move(state.food, player.headPiece);
+
+        if (tempPlayer.boostedTicks > 0) {
+            tempPlayer.boostedTicks--;
+            // Move an extra time if boosted
+            tempPlayer.headPiece = move(state.food, tempPlayer.headPiece);
+        }
+
         return tempPlayer;
     });
 
@@ -277,6 +282,10 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
 
             if (foodCollided.type === 'honey') {
                 player.slowedTicks = config.slowedTicksDuration;
+            }
+
+            if (foodCollided.type === 'milk') {
+                player.boostedTicks = config.boostedTicksDuration;
             }
         }
         return player;

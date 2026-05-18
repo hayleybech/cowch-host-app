@@ -3,12 +3,15 @@ export const config = {
     cols: 30,
     cellSize: 32,
     tick: 500,
-    foodSpawnRate: 10,
+    // ticksPerFood: 10,
+    ticksPerFood: 3, // debug
     foodWeights: {
-        apple: 0.8,
-        honey: 0.2,
+        apple: 0.7,
+        honey: 0.5,
+        milk: 0.5,
     },
     slowedTicksDuration: 10,
+    boostedTicksDuration: 10,
     resumeGracePeriod: 3,
 } as const;
 
@@ -29,6 +32,10 @@ export const sprites = {
         honey: {
             x: 3,
             y: 7,
+        },
+        milk: {
+            x: 3,
+            y: 5,
         },
     },
     cow: {

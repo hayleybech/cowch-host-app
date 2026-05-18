@@ -26,3 +26,17 @@ export function generateRandomString(length: number, uppercase: boolean, lowerca
 export function getRandomElement<T>(array: T[]): T {
     return array[Math.floor(Math.random() * array.length)];
 }
+
+export function getWeightedRandomElement<T extends string>(weights: Record<T, number>): T {
+    const totalWeight = Object.values(weights).reduce((acc, weight) => (acc as number) + (weight as number), 0) as number;
+    let random = Math.random() * totalWeight;
+
+    for (const [item, weight] of Object.entries(weights)) {
+        random -= weight as number;
+        if (random <= 0) {
+            return item as T;
+        }
+    }
+
+    return Object.keys(weights)[0] as T;
+}

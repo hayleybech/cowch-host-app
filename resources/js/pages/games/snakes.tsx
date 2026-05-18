@@ -1,7 +1,7 @@
 import { generateRandomString, getRandomElement } from '@/lib/utils';
 import { getRotationFromSurroundingPieces, isAlive, shouldUseStraightPiece } from '@/pages/games/cow';
 import { movePlayers, reducer } from '@/pages/games/game';
-import { Apple, CowBreed, CowPiece, Honey, PlayerAction } from '@/pages/games/types';
+import { CowBreed, CowPiece, Food, PlayerAction } from '@/pages/games/types';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
@@ -308,7 +308,7 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
     );
 };
 
-const RenderFood = (props: { food: Apple | Honey }) => (
+const RenderFood = (props: { food: Food }) => (
     <div
         className="absolute flex items-center justify-center text-white"
         style={{
@@ -318,7 +318,13 @@ const RenderFood = (props: { food: Apple | Honey }) => (
             left: props.food.pos.x * config.cellSize,
             backgroundImage: "url('/sprite.png')",
             backgroundSize: spriteBgSize,
-            backgroundPosition: getSpriteBgPos(props.food.type === 'apple' ? sprites.food.tuft : sprites.food.honey),
+            backgroundPosition: getSpriteBgPos(
+                props.food.type === 'apple'
+                    ? sprites.food.tuft
+                    : props.food.type === 'honey'
+                    ? sprites.food.honey
+                    : sprites.food.milk,
+            ),
         }}
     >
         &nbsp;

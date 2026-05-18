@@ -1,13 +1,13 @@
 import { getRandomNumber } from '@/lib/utils';
 import { config } from './config';
-import { AlivePlayer, Apple, CowPiece, Honey, Player, Position } from './types';
+import { AlivePlayer, CowPiece, Food, Player, Position } from './types';
 
 export const getRandomPosition = (): Position => ({
     x: getRandomNumber(2, config.cols - 2), // Ensure tail doesn't spawn off left edge (all players spawn facing right)
     y: getRandomNumber(1, config.rows - 2),
 });
 
-export const move = <T extends CowPiece>(food: (Apple | Honey)[], piece: T, queueDir?: Direction): T => {
+export const move = <T extends CowPiece>(food: Food[], piece: T, queueDir?: Direction): T => {
     const newPiece = { ...piece };
     newPiece.pos = shiftPos(newPiece.pos, newPiece.dir);
 
@@ -50,7 +50,7 @@ const shiftPos = (pos: Position, dir: Direction): Position => {
 };
 export type Direction = 'up' | 'down' | 'right' | 'left';
 
-export function playerHasCollidedWithAnyFood(playerPos: Position, food: (Apple | Honey)[]): (Apple | Honey) | undefined {
+export function playerHasCollidedWithAnyFood(playerPos: Position, food: Food[]): Food | undefined {
     return food.find((f) => posIsEqual(playerPos, f.pos));
 }
 

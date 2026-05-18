@@ -2,7 +2,8 @@ import { sprites } from '@/pages/games/config';
 import { Direction } from '@/pages/games/cow';
 import { DataConnection } from 'peerjs';
 
-export type Piece = Apple | Honey | CowHead | CowMiddle | CowTail;
+export type Piece = Apple | Honey | Milk | CowHead | CowMiddle | CowTail;
+export type Food = Apple | Honey | Milk;
 export type Apple = {
     type: 'apple';
     pos: Position;
@@ -10,6 +11,11 @@ export type Apple = {
 
 export type Honey = {
     type: 'honey';
+    pos: Position;
+};
+
+export type Milk = {
+    type: 'milk';
     pos: Position;
 };
 
@@ -24,7 +30,7 @@ export type Cell = {
 
 export type GameState = {
     players: Player[];
-    food: (Apple | Honey)[];
+    food: Food[];
     cells: Cell[][];
     ticksSinceFood: number;
     isPaused: boolean;
@@ -71,6 +77,7 @@ export type AlivePlayer = {
     headPiece: CowHead;
     breed: CowBreed;
     slowedTicks: number;
+    boostedTicks: number;
 };
 export type DeadPlayer = {
     id: string;
