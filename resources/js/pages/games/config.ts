@@ -3,7 +3,12 @@ export const config = {
     cols: 30,
     cellSize: 32,
     tick: 500,
-    appleRate: 10,
+    foodSpawnRate: 10,
+    foodWeights: {
+        apple: 0.8,
+        honey: 0.2,
+    },
+    slowedTicksDuration: 10,
     resumeGracePeriod: 3,
 } as const;
 
@@ -20,6 +25,10 @@ export const sprites = {
         tuft: {
             x: 3,
             y: 1,
+        },
+        honey: {
+            x: 3,
+            y: 7,
         },
     },
     cow: {

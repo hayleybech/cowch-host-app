@@ -1,7 +1,7 @@
 import { generateRandomString, getRandomElement } from '@/lib/utils';
 import { getRotationFromSurroundingPieces, isAlive, shouldUseStraightPiece } from '@/pages/games/cow';
 import { movePlayers, reducer } from '@/pages/games/game';
-import { Apple, CowBreed, CowPiece, PlayerAction } from '@/pages/games/types';
+import { Apple, CowBreed, CowPiece, Honey, PlayerAction } from '@/pages/games/types';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
@@ -30,7 +30,7 @@ export const Snakes = () => {
         players: [],
         food: [],
         cells: generateGrid(),
-        ticksSinceApple: 0,
+        ticksSinceFood: 0,
         isPaused: true,
         resumeGracePeriodSeconds: 0,
         connections: [],
@@ -89,7 +89,7 @@ export const Snakes = () => {
     useInterval(
         () => {
             movePlayers(gameState, dispatch);
-            dispatch({ type: 'SPAWN_APPLE' });
+            dispatch({ type: 'SPAWN_FOOD' });
         },
         gameState.isPaused ? null : config.tick,
     );
@@ -174,8 +174,8 @@ export const Snakes = () => {
                                 />
                             ),
                     )}
-                    {gameState.food.map((tuft) => (
-                        <RenderTuft tuft={tuft} key={`tuft-[${tuft.pos.x},${tuft.pos.y}]`} />
+                    {gameState.food.map((food) => (
+                        <RenderFood food={food} key={`food-[${food.pos.x},${food.pos.y}]`} />
                     ))}
                     {gameState.isPaused && (
                         <div className="absolute top-0 right-0 bottom-0 left-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
@@ -308,17 +308,17 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
     );
 };
 
-const RenderTuft = (props: { tuft: Apple }) => (
+const RenderFood = (props: { food: Apple | Honey }) => (
     <div
         className="absolute flex items-center justify-center text-white"
         style={{
             height: config.cellSize,
             width: config.cellSize,
-            top: props.tuft.pos.y * config.cellSize,
-            left: props.tuft.pos.x * config.cellSize,
+            top: props.food.pos.y * config.cellSize,
+            left: props.food.pos.x * config.cellSize,
             backgroundImage: "url('/sprite.png')",
             backgroundSize: spriteBgSize,
-            backgroundPosition: getSpriteBgPos(sprites.food.tuft),
+            backgroundPosition: getSpriteBgPos(props.food.type === 'apple' ? sprites.food.tuft : sprites.food.honey),
         }}
     >
         &nbsp;

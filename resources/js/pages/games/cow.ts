@@ -1,13 +1,13 @@
 import { getRandomNumber } from '@/lib/utils';
 import { config } from './config';
-import { AlivePlayer, Apple, CowPiece, Player, Position } from './types';
+import { AlivePlayer, Apple, CowPiece, Honey, Player, Position } from './types';
 
 export const getRandomPosition = (): Position => ({
     x: getRandomNumber(2, config.cols - 2), // Ensure tail doesn't spawn off left edge (all players spawn facing right)
     y: getRandomNumber(1, config.rows - 2),
 });
 
-export const move = <T extends CowPiece>(apples: Apple[], piece: T, queueDir?: Direction): T => {
+export const move = <T extends CowPiece>(food: (Apple | Honey)[], piece: T, queueDir?: Direction): T => {
     const newPiece = { ...piece };
     newPiece.pos = shiftPos(newPiece.pos, newPiece.dir);
 
@@ -16,7 +16,7 @@ export const move = <T extends CowPiece>(apples: Apple[], piece: T, queueDir?: D
 
     // Recursively move the next piece(s)
     if (newPiece.type !== 'tail') {
-        newPiece.nextPiece = move(apples, newPiece.nextPiece, piece.dir);
+        newPiece.nextPiece = move(food, newPiece.nextPiece, piece.dir);
     }
 
     return newPiece;
@@ -50,8 +50,8 @@ const shiftPos = (pos: Position, dir: Direction): Position => {
 };
 export type Direction = 'up' | 'down' | 'right' | 'left';
 
-export function playerHasCollidedWithAnyApple(playerPos: Position, apples: Apple[]): Apple | undefined {
-    return apples.find((apple) => posIsEqual(playerPos, apple.pos));
+export function playerHasCollidedWithAnyFood(playerPos: Position, food: (Apple | Honey)[]): (Apple | Honey) | undefined {
+    return food.find((f) => posIsEqual(playerPos, f.pos));
 }
 
 export function getSecondLastPiece(piece: CowPiece, prevPiece: CowPiece): CowPiece {

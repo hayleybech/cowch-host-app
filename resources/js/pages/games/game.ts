@@ -4,7 +4,7 @@ import {
     getSecondLastPiece,
     isAlive,
     move,
-    playerHasCollidedWithAnyApple,
+    playerHasCollidedWithAnyFood,
     playerHasCollidedWithAnyPlayer,
     playerHasCollidedWithAnyWall, posIsEqual
 } from '@/pages/games/cow';
@@ -62,6 +62,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
             score: 0,
             isAlive: true,
             breed: action.payload.breed,
+            slowedTicks: 0,
             // breed: getRandomElement(CowBreeds),
         };
 
@@ -102,34 +103,37 @@ export function reducer(state: GameState, action: GameAction): GameState {
         };
     }
 
-    if (action.type === 'REMOVE_APPLE') {
+    if (action.type === 'REMOVE_FOOD') {
         return {
             ...state,
-            food: state.food.toSpliced(
-                state.food.findIndex((apple) => apple.pos.x === action.payload.x && apple.pos.y === action.payload.y),
-                1,
-            ),
+            food: state.food.filter((f) => !posIsEqual(f.pos, action.payload)),
         };
     }
 
-    if (action.type === 'SPAWN_APPLE') {
-        if (state.ticksSinceApple < config.appleRate) {
+    if (action.type === 'SPAWN_FOOD') {
+        if (state.ticksSinceFood < config.foodSpawnRate) {
             return {
                 ...state,
-                ticksSinceApple: state.ticksSinceApple + 1,
+                ticksSinceFood: state.ticksSinceFood + 1,
             };
         }
 
-        const apples = state.food;
-        apples.push({
-            type: 'apple',
-            pos: findAvailablePosition(state)
+        const food = [...state.food];
+        const random = Math.random();
+        let foodType: 'apple' | 'honey' = 'apple';
+        if (random > config.foodWeights.apple) {
+            foodType = 'honey';
+        }
+
+        food.push({
+            type: foodType,
+            pos: findAvailablePosition(state),
         });
 
         return {
             ...state,
-            food: apples,
-            ticksSinceApple: 0,
+            food: food,
+            ticksSinceFood: 0,
         };
     }
 
@@ -228,37 +232,52 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
         }
 
         const tempPlayer = { ...player };
+
+        if (tempPlayer.slowedTicks > 0) {
+            tempPlayer.slowedTicks--;
+            // Only move every other tick if slowed
+            if (tempPlayer.slowedTicks % 2 === 0) {
+                return tempPlayer;
+            }
+        }
+
         tempPlayer.headPiece = move(state.food, player.headPiece);
         return tempPlayer;
     });
 
-    // Check collisions with apples
+    // Check collisions with food
     players = players.map((player) => {
         if (!isAlive(player)) {
             return player;
         }
 
-        // Check for apple
-        const appleCollided = playerHasCollidedWithAnyApple(player.headPiece.pos, state.food);
-        if (player.headPiece && appleCollided) {
-            // Remove Apple
-            dispatch({ type: 'REMOVE_APPLE', payload: { x: appleCollided.pos.x, y: appleCollided.pos.y } });
+        // Check for food
+        const foodCollided = playerHasCollidedWithAnyFood(player.headPiece.pos, state.food);
+        if (player.headPiece && foodCollided) {
+            // Remove Food
+            dispatch({ type: 'REMOVE_FOOD', payload: { x: foodCollided.pos.x, y: foodCollided.pos.y } });
 
-            // Grow tail
-            const playerOld = state.players.find((playerA) => playerA.id === player.id) as AlivePlayer;
-            const slpOld = getSecondLastPiece(playerOld.headPiece.nextPiece, playerOld.headPiece);
-            getSecondLastPiece(player.headPiece.nextPiece as CowPiece, player.headPiece).nextPiece = {
-                type: 'middle',
-                pos: { ...(slpOld.pos as Position) },
-                dir: slpOld.dir as Direction,
-                nextPiece: {
-                    type: 'tail',
-                    pos: { ...(slpOld.nextPiece?.pos as Position) },
-                    dir: slpOld.nextPiece?.dir as Direction,
-                    nextPiece: undefined,
-                },
-            };
-            player.score++;
+            if (foodCollided.type === 'apple') {
+                // Grow tail
+                const playerOld = state.players.find((playerA) => playerA.id === player.id) as AlivePlayer;
+                const slpOld = getSecondLastPiece(playerOld.headPiece.nextPiece, playerOld.headPiece);
+                getSecondLastPiece(player.headPiece.nextPiece as CowPiece, player.headPiece).nextPiece = {
+                    type: 'middle',
+                    pos: { ...(slpOld.pos as Position) },
+                    dir: slpOld.dir as Direction,
+                    nextPiece: {
+                        type: 'tail',
+                        pos: { ...(slpOld.nextPiece?.pos as Position) },
+                        dir: slpOld.nextPiece?.dir as Direction,
+                        nextPiece: undefined,
+                    },
+                };
+                player.score++;
+            }
+
+            if (foodCollided.type === 'honey') {
+                player.slowedTicks = config.slowedTicksDuration;
+            }
         }
         return player;
     });

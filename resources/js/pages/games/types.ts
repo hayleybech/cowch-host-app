@@ -2,9 +2,14 @@ import { sprites } from '@/pages/games/config';
 import { Direction } from '@/pages/games/cow';
 import { DataConnection } from 'peerjs';
 
-export type Piece = Apple | CowHead | CowMiddle | CowTail;
+export type Piece = Apple | Honey | CowHead | CowMiddle | CowTail;
 export type Apple = {
     type: 'apple';
+    pos: Position;
+};
+
+export type Honey = {
+    type: 'honey';
     pos: Position;
 };
 
@@ -19,9 +24,9 @@ export type Cell = {
 
 export type GameState = {
     players: Player[];
-    food: Apple[];
+    food: (Apple | Honey)[];
     cells: Cell[][];
-    ticksSinceApple: number;
+    ticksSinceFood: number;
     isPaused: boolean;
     resumeGracePeriodSeconds: number;
     connections: DataConnection[];
@@ -53,8 +58,8 @@ export type GameAction =
       }
     | { type: 'CHANGE_DIRECTION'; payload: { playerId: string; direction: Direction } }
     | { type: 'UPDATE_PLAYERS'; payload: Player[] }
-    | { type: 'SPAWN_APPLE' }
-    | { type: 'REMOVE_APPLE'; payload: Position }
+    | { type: 'SPAWN_FOOD' }
+    | { type: 'REMOVE_FOOD'; payload: Position }
     | { type: 'REQUEST_TOGGLE_PAUSE' }
     | { type: 'TICK_RESUME_COUNTDOWN' };
 
@@ -65,6 +70,7 @@ export type AlivePlayer = {
     isAlive: true;
     headPiece: CowHead;
     breed: CowBreed;
+    slowedTicks: number;
 };
 export type DeadPlayer = {
     id: string;
