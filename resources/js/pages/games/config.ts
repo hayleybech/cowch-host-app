@@ -2,16 +2,19 @@ export const config = {
     rows: 20,
     cols: 30,
     cellSize: 32,
-    tick: 500,
-    // ticksPerFood: 10,
-    ticksPerFood: 3, // debug
+    tick: 250,
+    // ticksPerFood: 20,
+    ticksPerFood: 6, // debug
     foodWeights: {
         apple: 0.7,
         honey: 0.5,
         milk: 0.5,
     },
-    slowedTicksDuration: 10,
-    boostedTicksDuration: 10,
+    ticksPerSlowMove: 4,
+    ticksPerRegularMove: 2,
+    ticksPerBoostMove: 1,
+    slowedTicksDuration: 20,
+    boostedTicksDuration: 20,
     resumeGracePeriod: 3,
 } as const;
 

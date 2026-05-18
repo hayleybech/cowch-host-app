@@ -32,6 +32,7 @@ export type GameState = {
     players: Player[];
     food: Food[];
     cells: Cell[][];
+    tickCount: number;
     ticksSinceFood: number;
     isPaused: boolean;
     resumeGracePeriodSeconds: number;
@@ -67,7 +68,8 @@ export type GameAction =
     | { type: 'SPAWN_FOOD' }
     | { type: 'REMOVE_FOOD'; payload: Position }
     | { type: 'REQUEST_TOGGLE_PAUSE' }
-    | { type: 'TICK_RESUME_COUNTDOWN' };
+    | { type: 'TICK_RESUME_COUNTDOWN' }
+    | { type: 'TICK' };
 
 export type AlivePlayer = {
     id: string;

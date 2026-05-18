@@ -30,6 +30,7 @@ export const Snakes = () => {
         players: [],
         food: [],
         cells: generateGrid(),
+        tickCount: 0,
         ticksSinceFood: 0,
         isPaused: true,
         resumeGracePeriodSeconds: 0,
@@ -88,6 +89,7 @@ export const Snakes = () => {
 
     useInterval(
         () => {
+            dispatch({ type: 'TICK' });
             movePlayers(gameState, dispatch);
             dispatch({ type: 'SPAWN_FOOD' });
         },

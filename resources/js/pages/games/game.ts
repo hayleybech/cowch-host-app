@@ -169,6 +169,13 @@ export function reducer(state: GameState, action: GameAction): GameState {
         };
     }
 
+    if (action.type === 'TICK') {
+        return {
+            ...state,
+            tickCount: state.tickCount + 1,
+        };
+    }
+
     return state;
 }
 
@@ -231,23 +238,30 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
 
         const tempPlayer = { ...player };
 
-        if (tempPlayer.slowedTicks > 0) {
-            tempPlayer.slowedTicks--;
-            // Only move every other tick if slowed
-            if (tempPlayer.slowedTicks % 2 === 0) {
-                return tempPlayer;
-            }
-        }
+        // Regular speed
+        let moveThisTick = state.tickCount % config.ticksPerRegularMove === 0;
 
-        tempPlayer.headPiece = move(state.food, player.headPiece);
-
+        // Boosted speed
         if (tempPlayer.boostedTicks > 0) {
             tempPlayer.boostedTicks--;
-            // Move an extra time if boosted
-            tempPlayer.headPiece = move(state.food, tempPlayer.headPiece);
+            moveThisTick = state.tickCount % config.ticksPerBoostMove === 0;
         }
 
-        return tempPlayer;
+        // Slowed speed
+        if (tempPlayer.slowedTicks > 0) {
+            tempPlayer.slowedTicks--;
+            // Slowed speed is moving every 4th tick
+            moveThisTick = state.tickCount % config.ticksPerSlowMove === 0;
+        }
+
+        if (!moveThisTick) {
+            return tempPlayer;
+        }
+
+        return {
+            ...tempPlayer,
+            headPiece: move(state.food, player.headPiece),
+        }
     });
 
     // Check collisions with food
