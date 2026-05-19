@@ -27,8 +27,6 @@ export const CowGame = () => {
     const [joinCode, setJoinCode] = useState<string>();
     const peerRef = useRef<Peer>(null);
 
-    const isDebugEnabled = true;
-
     const [gameState, dispatch] = useReducer(reducer, {
         players: [],
         food: [],
@@ -41,6 +39,7 @@ export const CowGame = () => {
         pendingConnections: [],
         clouds: [],
         honeyPatches: [],
+        milkPatches: [],
     });
 
     useEffect(() => {
@@ -159,7 +158,7 @@ export const CowGame = () => {
                                             <div className="font-extrabold">
                                                 {player.username} {!player.isAlive && '(Dead)'}
                                             </div>
-                                            {isDebugEnabled && isAlive(player) && (
+                                            {config.isDebugEnabled && isAlive(player) && (
                                                 <button
                                                     className={classNames(
                                                         'w-fit cursor-pointer rounded px-2 py-0.5 text-xs font-bold text-white',
@@ -234,6 +233,11 @@ export const CowGame = () => {
                             <RenderHoneyPatch patch={patch} key={`honey-${index}`} />
                         ))}
                     </AnimatePresence>
+                    <AnimatePresence>
+                        {gameState.milkPatches.map((patch, index) => (
+                            <RenderMilkPatch patch={patch} key={`milk-${index}`} />
+                        ))}
+                    </AnimatePresence>
                     {gameState.isPaused && (
                         <div className="absolute top-0 right-0 bottom-0 left-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70 z-20">
                             {gameState.resumeGracePeriodSeconds > 0 ? (
@@ -305,6 +309,33 @@ const RenderHoneyPatch = ({ patch }: { patch: { pos: { x: number; y: number } } 
             animate={{ opacity: 0.8 }}
             exit={{ opacity: 0, transition: { duration: 2.0 } }}
             className="absolute rounded-full bg-amber-500"
+            style={{
+                height: size,
+                width: size,
+                top: patch.pos.y * config.cellSize - offset,
+                left: patch.pos.x * config.cellSize - offset,
+                filter: 'blur(16px)',
+                zIndex: 3,
+            }}
+            transition={{
+                duration: 2.0,
+                ease: 'easeOut',
+                opacity: { duration: 0.5 },
+            }}
+        />
+    );
+};
+
+const RenderMilkPatch = ({ patch }: { patch: { pos: { x: number; y: number } } }) => {
+    const size = config.cellSize * config.milkPatchRadius * 2;
+    const offset = (size - config.cellSize) / 2;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.8 }}
+            exit={{ opacity: 0, transition: { duration: 2.0 } }}
+            className="absolute rounded-full bg-slate-200"
             style={{
                 height: size,
                 width: size,

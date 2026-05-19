@@ -20,7 +20,10 @@ export const config = {
     cloudDurationTicks: 40,
     resumeGracePeriod: 3,
     honeyPatchRadius: 4,
+    milkPatchRadius: 4,
     cloudRadius: 4,
+
+    isDebugEnabled: false,
 } as const;
 
 export const sprites = {

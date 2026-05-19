@@ -7,6 +7,7 @@ import {
     grow,
     isAlive,
     isCowInHoneyPatch,
+    isCowInMilkPatch,
     isValidDirection,
     move,
     playerHasCollidedWithAnyFood,
@@ -270,8 +271,17 @@ export function reducer(state: GameState, action: GameAction): GameState {
             };
         }
 
-        if (player.storedPowerup && player.storedPowerup.type === 'milk') {
-            // @todo
+    if (player.storedPowerup && player.storedPowerup.type === 'milk') {
+            const newMilkPatch = {
+                pos: { ...tail.pos },
+                ticksRemaining: config.cloudDurationTicks,
+            };
+
+            return {
+                ...state,
+                players: updatedPlayers,
+                milkPatches: [...state.milkPatches, newMilkPatch],
+            };
         }
 
         return state;
@@ -346,11 +356,19 @@ export function reducer(state: GameState, action: GameAction): GameState {
             }))
             .filter((patch) => patch.ticksRemaining > 0);
 
+        const updatedMilkPatches = state.milkPatches
+            .map((patch) => ({
+                ...patch,
+                ticksRemaining: patch.ticksRemaining - 1,
+            }))
+            .filter((patch) => patch.ticksRemaining > 0);
+
         return {
             ...state,
             tickCount: state.tickCount + 1,
             clouds: updatedClouds,
             honeyPatches: updatedHoneyPatches,
+            milkPatches: updatedMilkPatches,
         };
     }
 
@@ -419,7 +437,11 @@ const positionHasPiece = (state: GameState, pos: Position) => {
         return posIsEqual(patch.pos, pos);
     });
 
-    return posHasPlayer || posHasFood || posHasCloud || posHasHoney;
+    const posHasMilk = state.milkPatches.some((patch) => {
+        return posIsEqual(patch.pos, pos);
+    });
+
+    return posHasPlayer || posHasFood || posHasCloud || posHasHoney || posHasMilk;
 }
 
 const cowHasPieceInPosition = (piece: CowPiece, pos: Position) => {
@@ -481,6 +503,16 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
         if (isInHoneyPatch) {
             console.log('player is in honey patch');
             moveThisTick = state.tickCount % config.ticksPerSlowMove === 0;
+        }
+
+        // Milk patch fast
+        const isInMilkPatch = state.milkPatches.some((patch) =>
+            isCowInMilkPatch(tempPlayer.headPiece, patch.pos, config.milkPatchRadius),
+        );
+
+        if (isInMilkPatch) {
+            console.log('player is in milk patch');
+            moveThisTick = state.tickCount % config.ticksPerBoostMove === 0;
         }
 
         if (!moveThisTick) {

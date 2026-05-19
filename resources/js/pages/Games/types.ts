@@ -43,6 +43,11 @@ export type HoneyPatch = {
     ticksRemaining: number;
 };
 
+export type MilkPatch = {
+    pos: Position;
+    ticksRemaining: number;
+};
+
 export type GameState = {
     players: Player[];
     food: Food[];
@@ -55,6 +60,7 @@ export type GameState = {
     pendingConnections: PendingConnection[];
     clouds: Cloud[];
     honeyPatches: HoneyPatch[];
+    milkPatches: MilkPatch[];
 };
 
 export type PendingConnection = {
