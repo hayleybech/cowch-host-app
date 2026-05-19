@@ -18,6 +18,8 @@ export const config = {
     boostedTicksDuration: 20,
     cloudDurationTicks: 40,
     resumeGracePeriod: 3,
+    honeyPatchRadius: 4,
+    cloudRadius: 4,
 } as const;
 
 export const sprites = {

@@ -136,6 +136,13 @@ export function isAlive(player: Player): player is AlivePlayer {
     return player.isAlive;
 }
 
+export function isCowInHoneyPatch(headPiece: CowHead, patchPos: Position, radius: number): boolean {
+    const dx = headPiece.pos.x - patchPos.x;
+    const dy = headPiece.pos.y - patchPos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return distance <= radius;
+}
+
 export function isValidDirection(headPiece: CowHead, requestedDir: Direction): boolean {
     const neckPiece = headPiece.nextPiece;
     if (!neckPiece) {

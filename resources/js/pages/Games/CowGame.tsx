@@ -38,6 +38,7 @@ export const CowGame = () => {
         connections: [],
         pendingConnections: [],
         clouds: [],
+        honeyPatches: [],
     });
 
     useEffect(() => {
@@ -62,6 +63,7 @@ export const CowGame = () => {
                         },
                     });
                 }
+                console.log('Received action:', action.type);
                 if (action.type === 'join') {
                     dispatch({
                         type: 'JOIN_PLAYER',
@@ -77,9 +79,15 @@ export const CowGame = () => {
                         payload: { playerId: conn.peer, direction: action.payload },
                     });
                 }
-                if (action.type === 'drop') {
+                if (action.type === 'drop_powerup') {
                     dispatch({
                         type: 'DROP_TRAP',
+                        payload: { playerId: conn.peer },
+                    });
+                }
+                if (action.type === 'use_powerup') {
+                    dispatch({
+                        type: 'APPLY_POWERUP',
                         payload: { playerId: conn.peer },
                     });
                 }
@@ -201,8 +209,13 @@ export const CowGame = () => {
                             <RenderCloud cloud={cloud} key={`cloud-${index}`} />
                         ))}
                     </AnimatePresence>
+                    <AnimatePresence>
+                        {gameState.honeyPatches.map((patch, index) => (
+                            <RenderHoneyPatch patch={patch} key={`honey-${index}`} />
+                        ))}
+                    </AnimatePresence>
                     {gameState.isPaused && (
-                        <div className="absolute top-0 right-0 bottom-0 left-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
+                        <div className="absolute top-0 right-0 bottom-0 left-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70 z-20">
                             {gameState.resumeGracePeriodSeconds > 0 ? (
                                 <>
                                     <div>RESUMING</div>
@@ -236,14 +249,14 @@ const CowAvatar = (props: { breed: CowBreed }) => (
 );
 
 const RenderCloud = ({ cloud }: { cloud: { pos: { x: number; y: number } } }) => {
-    const size = config.cellSize * 8;
+    const size = config.cellSize * config.cloudRadius * 2;
     const offset = (size - config.cellSize) / 2;
 
     return (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: 2.0 } }}
             className="absolute rounded-full bg-stone-500"
             style={{
                 height: size,
@@ -253,7 +266,38 @@ const RenderCloud = ({ cloud }: { cloud: { pos: { x: number; y: number } } }) =>
                 filter: 'blur(16px)',
                 zIndex: 10,
             }}
-            transition={{ duration: 2.0, ease: 'easeOut' }}
+            transition={{
+                duration: 2.0,
+                ease: 'easeOut',
+                opacity: { duration: 0.5 },
+            }}
+        />
+    );
+};
+
+const RenderHoneyPatch = ({ patch }: { patch: { pos: { x: number; y: number } } }) => {
+    const size = config.cellSize * config.honeyPatchRadius * 2;
+    const offset = (size - config.cellSize) / 2;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.8 }}
+            exit={{ opacity: 0, transition: { duration: 2.0 } }}
+            className="absolute rounded-full bg-amber-500"
+            style={{
+                height: size,
+                width: size,
+                top: patch.pos.y * config.cellSize - offset,
+                left: patch.pos.x * config.cellSize - offset,
+                filter: 'blur(16px)',
+                zIndex: 3,
+            }}
+            transition={{
+                duration: 2.0,
+                ease: 'easeOut',
+                opacity: { duration: 0.5 },
+            }}
         />
     );
 };
@@ -277,6 +321,7 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
                         backgroundImage: "url('/sprite.png')",
                         backgroundSize: spriteBgSize,
                         backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].head),
+                        zIndex: 5,
                     }}
                 >
                     &nbsp;
@@ -301,6 +346,7 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
                                 backgroundImage: "url('/sprite.png')",
                                 backgroundSize: spriteBgSize,
                                 backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].middle),
+                                zIndex: 5,
                             }}
                         >
                             &nbsp;
@@ -319,6 +365,7 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
                                 backgroundImage: "url('/sprite.png')",
                                 backgroundSize: spriteBgSize,
                                 backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].bend),
+                                zIndex: 5,
                             }}
                         >
                             &nbsp;
@@ -346,6 +393,7 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
                         backgroundImage: "url('/sprite.png')",
                         backgroundSize: spriteBgSize,
                         backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].tail),
+                        zIndex: 5,
                     }}
                 >
                     &nbsp;
