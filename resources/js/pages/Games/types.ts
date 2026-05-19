@@ -110,6 +110,7 @@ export type GameAction =
     | { type: 'TICK_RESUME_COUNTDOWN' }
     | { type: 'DROP_TRAP'; payload: { playerId: string } }
     | { type: 'APPLY_POWERUP'; payload: { playerId: string } }
+    | { type: 'TOGGLE_FREEZE_PLAYER'; payload: { playerId: string } }
     | { type: 'TICK' };
 
 export type AlivePlayer = {
@@ -122,6 +123,7 @@ export type AlivePlayer = {
     slowedTicks: number;
     boostedTicks: number;
     storedPowerup: Food | null;
+    isFrozen?: boolean;
 };
 export type DeadPlayer = {
     id: string;

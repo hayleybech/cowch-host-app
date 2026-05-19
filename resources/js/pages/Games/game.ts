@@ -1,16 +1,19 @@
 import { getWeightedRandomElement } from '@/lib/utils';
 import { config } from '@/pages/Games/config';
 import {
+    dash,
     getRandomPosition,
+    getTail,
     grow,
     isAlive,
-    isValidDirection,
     isCowInHoneyPatch,
+    isValidDirection,
     move,
-    getTail,
     playerHasCollidedWithAnyFood,
-    playerHasCollidedWithAnyPlayer,
-    playerHasCollidedWithAnyWall, posIsEqual
+    playerHasCollidedWithAnyWall,
+    playerHasHeadbuttedAnyPlayer,
+    playerHasHeadbuttedPlayer,
+    posIsEqual
 } from '@/pages/Games/cow';
 import {
     AlivePlayer,
@@ -19,6 +22,7 @@ import {
     CowMiddle,
     CowPiece,
     CowTail,
+    Food,
     GameAction,
     GameNotification,
     GameState,
@@ -230,27 +234,22 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'DROP_TRAP') {
-        const player = state.players.find((p) => p.id === action.payload.playerId);
+        const playerIdx = state.players.findIndex((p) => p.id === action.payload.playerId);
+        const player = state.players[playerIdx];
         if (!player || !isAlive(player)) {
             return state;
         }
 
-        console.log('drop trap', 'state', state);
+        const tail = getTail(player.headPiece);
+        const updatedPlayers = [...state.players];
+        updatedPlayers[playerIdx] = { ...player, storedPowerup: null };
+        broadcastTo(state.connections, player.id, { type: 'powerup_used' });
+
         if (player.storedPowerup && player.storedPowerup.type === 'bean') {
-            const tail = getTail(player.headPiece);
             const newCloud = {
                 pos: { ...tail.pos },
                 ticksRemaining: config.cloudDurationTicks,
             };
-
-            const updatedPlayers = state.players.map((p) => {
-                if (p.id === action.payload.playerId && isAlive(p)) {
-                    broadcastTo(state.connections, p.id, { type: 'powerup_used' });
-                    return { ...p, storedPowerup: null };
-                }
-                return p;
-            });
-
             return {
                 ...state,
                 players: updatedPlayers,
@@ -259,19 +258,10 @@ export function reducer(state: GameState, action: GameAction): GameState {
         }
 
         if (player.storedPowerup && player.storedPowerup.type === 'honey') {
-            const tail = getTail(player.headPiece);
             const newHoneyPatch = {
                 pos: { ...tail.pos },
                 ticksRemaining: config.cloudDurationTicks,
             };
-
-            const updatedPlayers = state.players.map((p) => {
-                if (p.id === action.payload.playerId && isAlive(p)) {
-                    broadcastTo(state.connections, p.id, { type: 'powerup_used' });
-                    return { ...p, storedPowerup: null };
-                }
-                return p;
-            });
 
             return {
                 ...state,
@@ -288,36 +278,53 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'APPLY_POWERUP') {
-        const player = state.players.find((p) => p.id === action.payload.playerId);
+        const playerIdx = state.players.findIndex((p) => p.id === action.payload.playerId);
+        const player = state.players[playerIdx];
+
         if (!player || !isAlive(player) || !player.storedPowerup) {
             return state;
         }
 
         const food = player.storedPowerup;
-        const updatedPlayers = state.players.map((p) => {
-            if (p.id === action.payload.playerId && isAlive(p)) {
-                const nextPlayer = { ...p, storedPowerup: null };
-                broadcastTo(state.connections, p.id, { type: 'powerup_used' });
+        const updatedPlayers = [...state.players];
+        const updatedPlayer = { ...player, storedPowerup: null };
+        updatedPlayers[playerIdx] = updatedPlayer;
+        broadcastTo(state.connections, player.id, { type: 'powerup_used' });
 
-                if (food.type === 'honey') {
-                    nextPlayer.boostedTicks = 0;
-                    nextPlayer.slowedTicks += config.slowedTicksDuration;
-                }
+        if (food.type === 'honey') {
+            updatedPlayer.boostedTicks = 0;
+            updatedPlayer.slowedTicks += config.slowedTicksDuration;
+        }
 
-                if (food.type === 'milk') {
-                    nextPlayer.slowedTicks = 0;
-                    nextPlayer.boostedTicks += config.boostedTicksDuration;
-                }
+        if (food.type === 'milk') {
+            updatedPlayer.slowedTicks = 0;
+            updatedPlayer.boostedTicks += config.boostedTicksDuration;
+        }
 
-                if (food.type === 'bean') {
-                    // @todo
-                }
+        let updatedFood = [...state.food];
+        if (food.type === 'bean') {
+            updatedPlayer.headPiece = dash(updatedPlayer.headPiece, config.dashDistance);
+            killRammedOpponents(updatedPlayer as AlivePlayer, updatedPlayers);
+            updatedFood = removeTrampledFood(updatedPlayer as AlivePlayer, state.food);
+        }
 
-                return nextPlayer;
-            }
-            return p;
-        });
+        return {
+            ...state,
+            players: updatedPlayers,
+            food: updatedFood,
+        };
+    }
 
+    if (action.type === 'TOGGLE_FREEZE_PLAYER') {
+        const playerIdx = state.players.findIndex((p) => p.id === action.payload.playerId);
+        const player = state.players[playerIdx];
+
+        if (!player || !isAlive(player)) {
+            return state;
+        }
+
+        const updatedPlayers = [...state.players];
+        updatedPlayers[playerIdx] = { ...player, isFrozen: !player.isFrozen };
         return {
             ...state,
             players: updatedPlayers,
@@ -350,6 +357,35 @@ export function reducer(state: GameState, action: GameAction): GameState {
     return state;
 }
 
+const killRammedOpponents = (
+    player: AlivePlayer,
+    updatedPlayers: Player[],
+) => {
+    // Check for collisions after teleporting
+    // Kill other players that collide with any part of this cow
+    updatedPlayers.forEach((otherPlayer, idx) => {
+        if (otherPlayer.id === player.id || !isAlive(otherPlayer)) {
+            return;
+        }
+
+        if (playerHasHeadbuttedPlayer(player, otherPlayer) || playerHasHeadbuttedPlayer(otherPlayer, player)) {
+            updatedPlayers[idx] = {
+                ...otherPlayer,
+                isAlive: false,
+            } as Player;
+        }
+    });
+};
+
+const removeTrampledFood = (
+    player: AlivePlayer,
+    food: Food[],
+) => {
+    // Remove any food that collides with any part of the cow
+    return food.filter((f) => !cowHasPieceInPosition(player.headPiece, f.pos));
+};
+
+// findAvailablePosition
 // @todo make this more efficient
 // - this will become slower the less room there is on the board
 // - it would be more performant to generate a list of possible positions,
@@ -416,6 +452,10 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
         }
 
         const tempPlayer = { ...player };
+
+        if (tempPlayer.isFrozen) {
+            return tempPlayer;
+        }
 
         // Regular speed
         let moveThisTick = state.tickCount % config.ticksPerRegularMove === 0;
@@ -487,7 +527,7 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
             return player;
         }
 
-        if (playerHasCollidedWithAnyPlayer(player, players) || playerHasCollidedWithAnyWall(player)) {
+        if (playerHasHeadbuttedAnyPlayer(player, players) || playerHasCollidedWithAnyWall(player)) {
             return {
                 ...player,
                 isAlive: false,

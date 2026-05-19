@@ -27,6 +27,8 @@ export const CowGame = () => {
     const [joinCode, setJoinCode] = useState<string>();
     const peerRef = useRef<Peer>(null);
 
+    const isDebugEnabled = true;
+
     const [gameState, dispatch] = useReducer(reducer, {
         players: [],
         food: [],
@@ -153,8 +155,26 @@ export const CowGame = () => {
                                 <li key={player.id} className="flex justify-between gap-8">
                                     <div className="flex gap-2">
                                         <CowAvatar breed={player.breed} />
-                                        <div className="font-extrabold">
-                                            {player.username} {!player.isAlive && '(Dead)'}
+                                        <div className="flex flex-col">
+                                            <div className="font-extrabold">
+                                                {player.username} {!player.isAlive && '(Dead)'}
+                                            </div>
+                                            {isDebugEnabled && isAlive(player) && (
+                                                <button
+                                                    className={classNames(
+                                                        'w-fit cursor-pointer rounded px-2 py-0.5 text-xs font-bold text-white',
+                                                        player.isFrozen ? 'bg-blue-600 hover:bg-blue-500' : 'bg-blue-400 hover:bg-blue-300',
+                                                    )}
+                                                    onClick={() =>
+                                                        dispatch({
+                                                            type: 'TOGGLE_FREEZE_PLAYER',
+                                                            payload: { playerId: player.id },
+                                                        })
+                                                    }
+                                                >
+                                                    {player.isFrozen ? 'Unfreeze' : 'Freeze'}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                     <div>{player.score}</div>

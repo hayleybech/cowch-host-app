@@ -16,6 +16,7 @@ export const config = {
     ticksPerBoostMove: 1,
     slowedTicksDuration: 20,
     boostedTicksDuration: 20,
+    dashDistance: 4,
     cloudDurationTicks: 40,
     resumeGracePeriod: 3,
     honeyPatchRadius: 4,
