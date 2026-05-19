@@ -4,6 +4,7 @@ import { movePlayers, reducer } from '@/pages/games/game';
 import { CowBreed, CowPiece, Food, PlayerAction } from '@/pages/games/types';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
 import { config, getSpriteBgPos, spriteBgSize, sprites } from './config';
@@ -195,9 +196,11 @@ export const Snakes = () => {
                     {gameState.food.map((food) => (
                         <RenderFood food={food} key={`food-[${food.pos.x},${food.pos.y}]`} />
                     ))}
-                    {gameState.clouds.map((cloud, index) => (
-                        <RenderCloud cloud={cloud} key={`cloud-${index}`} />
-                    ))}
+                    <AnimatePresence>
+                        {gameState.clouds.map((cloud, index) => (
+                            <RenderCloud cloud={cloud} key={`cloud-${index}`} />
+                        ))}
+                    </AnimatePresence>
                     {gameState.isPaused && (
                         <div className="absolute top-0 right-0 bottom-0 left-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
                             {gameState.resumeGracePeriodSeconds > 0 ? (
@@ -233,21 +236,24 @@ const CowAvatar = (props: { breed: CowBreed }) => (
 );
 
 const RenderCloud = ({ cloud }: { cloud: { pos: { x: number; y: number } } }) => {
-    const size = config.cellSize * 3;
+    const size = config.cellSize * 8;
     const offset = (size - config.cellSize) / 2;
 
     return (
-        <div
-            className="absolute rounded-full bg-white opacity-80"
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute rounded-full bg-stone-500"
             style={{
                 height: size,
                 width: size,
                 top: cloud.pos.y * config.cellSize - offset,
                 left: cloud.pos.x * config.cellSize - offset,
-                filter: 'blur(8px)',
-                transition: 'opacity 0.5s ease-out',
+                filter: 'blur(16px)',
                 zIndex: 10,
             }}
+            transition={{ duration: 2.0, ease: 'easeOut' }}
         />
     );
 };

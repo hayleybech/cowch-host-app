@@ -9,7 +9,7 @@ export const config = {
         tuft: 0.7,
         honey: 0.5,
         milk: 0.5,
-        bean: 0.3,
+        bean: 0.4,
     },
     ticksPerSlowMove: 4,
     ticksPerRegularMove: 2,
