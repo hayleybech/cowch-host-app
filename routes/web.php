@@ -4,17 +4,17 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-//    return Inertia::render('welcome');
-    return Inertia::render('games/snakes');
+//    return Inertia::render('Welcome');
+    return Inertia::render('Games/CowGame');
 })->name('home');
 
 //Route::get('/cowwwch', function () {
-//    return Inertia::render('games/snakes');
+//    return Inertia::render('Games/snakes');
 //})->name('snake');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        return Inertia::render('Dashboard');
     })->name('dashboard');
 });
 

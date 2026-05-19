@@ -1,5 +1,5 @@
-import { sprites } from '@/pages/games/config';
-import { Direction } from '@/pages/games/cow';
+import { sprites } from '@/pages/Games/config';
+import { Direction } from '@/pages/Games/cow';
 import { DataConnection } from 'peerjs';
 
 export type Piece = Tuft | Honey | Milk | Bean | CowHead | CowMiddle | CowTail;

@@ -1,7 +1,7 @@
 import { generateRandomString, getRandomElement } from '@/lib/utils';
-import { getRotationFromSurroundingPieces, isAlive, shouldUseStraightPiece } from '@/pages/games/cow';
-import { movePlayers, reducer } from '@/pages/games/game';
-import { CowBreed, CowPiece, Food, PlayerAction } from '@/pages/games/types';
+import { getRotationFromSurroundingPieces, isAlive, shouldUseStraightPiece } from '@/pages/Games/cow';
+import { movePlayers, reducer } from '@/pages/Games/game';
+import { CowBreed, CowPiece, Food, PlayerAction } from '@/pages/Games/types';
 import classNames from 'classnames';
 import Peer, { DataConnection } from 'peerjs';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -23,7 +23,7 @@ const generateGrid = () => {
     return cellsTemp;
 };
 
-export const Snakes = () => {
+export const CowGame = () => {
     const [joinCode, setJoinCode] = useState<string>();
     const peerRef = useRef<Peer>(null);
 
@@ -219,7 +219,7 @@ export const Snakes = () => {
     );
 };
 
-export default Snakes;
+export default CowGame;
 
 const CowAvatar = (props: { breed: CowBreed }) => (
     <div

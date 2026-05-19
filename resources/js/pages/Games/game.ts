@@ -1,5 +1,5 @@
 import { getWeightedRandomElement } from '@/lib/utils';
-import { config } from '@/pages/games/config';
+import { config } from '@/pages/Games/config';
 import {
     Direction, getRandomPosition,
     getSecondLastPiece,
@@ -11,7 +11,7 @@ import {
     playerHasCollidedWithAnyFood,
     playerHasCollidedWithAnyPlayer,
     playerHasCollidedWithAnyWall, posIsEqual
-} from '@/pages/games/cow';
+} from '@/pages/Games/cow';
 import {
     AlivePlayer,
     CowBreeds,
@@ -24,7 +24,7 @@ import {
     GameState,
     Player,
     Position
-} from '@/pages/games/types';
+} from '@/pages/Games/types';
 import { DataConnection } from 'peerjs';
 import { Dispatch } from 'react';
 
