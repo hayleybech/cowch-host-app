@@ -3,8 +3,8 @@ import { getRotationFromSurroundingPieces, isAlive, shouldUseStraightPiece } fro
 import { movePlayers, reducer } from '@/pages/Games/game';
 import { CowBreed, CowPiece, Food, PlayerAction } from '@/pages/Games/types';
 import classNames from 'classnames';
-import Peer, { DataConnection } from 'peerjs';
 import { AnimatePresence, motion } from 'framer-motion';
+import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
 import { config, getSpriteBgPos, spriteBgSize, sprites } from './config';
@@ -22,7 +22,6 @@ const generateGrid = () => {
     }
     return cellsTemp;
 };
-
 export const CowGame = () => {
     const [joinCode, setJoinCode] = useState<string>();
     const peerRef = useRef<Peer>(null);
@@ -38,6 +37,8 @@ export const CowGame = () => {
         connections: [],
         pendingConnections: [],
         clouds: [],
+        honeyPatches: [],
+        milkPatches: [],
     });
 
     useEffect(() => {
@@ -62,6 +63,7 @@ export const CowGame = () => {
                         },
                     });
                 }
+                console.log('Received action:', action.type);
                 if (action.type === 'join') {
                     dispatch({
                         type: 'JOIN_PLAYER',
@@ -77,9 +79,15 @@ export const CowGame = () => {
                         payload: { playerId: conn.peer, direction: action.payload },
                     });
                 }
-                if (action.type === 'drop') {
+                if (action.type === 'drop_powerup') {
                     dispatch({
                         type: 'DROP_TRAP',
+                        payload: { playerId: conn.peer },
+                    });
+                }
+                if (action.type === 'use_powerup') {
+                    dispatch({
+                        type: 'APPLY_POWERUP',
                         payload: { playerId: conn.peer },
                     });
                 }
@@ -145,9 +153,34 @@ export const CowGame = () => {
                                 <li key={player.id} className="flex justify-between gap-8">
                                     <div className="flex gap-2">
                                         <CowAvatar breed={player.breed} />
-                                        <div className="font-extrabold">
-                                            {player.username} {!player.isAlive && '(Dead)'}
+
+                                        <div className="flex flex-col">
+                                            <div className="font-extrabold">
+                                                {player.username} {!player.isAlive && '(Dead)'}
+                                            </div>
+                                            {config.isDebugEnabled && isAlive(player) && (
+                                                <button
+                                                    className={classNames(
+                                                        'w-fit cursor-pointer rounded px-2 py-0.5 text-xs font-bold text-white',
+                                                        player.isFrozen
+                                                            ? 'bg-blue-600 hover:bg-blue-500'
+                                                            : 'bg-blue-400 hover:bg-blue-300',
+                                                    )}
+                                                    onClick={() =>
+                                                        dispatch({
+                                                            type: 'TOGGLE_FREEZE_PLAYER',
+                                                            payload: { playerId: player.id },
+                                                        })
+                                                    }
+                                                >
+                                                    {player.isFrozen ? 'Unfreeze' : 'Freeze'}
+                                                </button>
+                                            )}
                                         </div>
+
+                                        {isAlive(player) && player.storedPowerup && (
+                                            <RenderFood food={player.storedPowerup} isInline />
+                                        )}
                                     </div>
                                     <div>{player.score}</div>
                                 </li>
@@ -201,8 +234,18 @@ export const CowGame = () => {
                             <RenderCloud cloud={cloud} key={`cloud-${index}`} />
                         ))}
                     </AnimatePresence>
+                    <AnimatePresence>
+                        {gameState.honeyPatches.map((patch, index) => (
+                            <RenderHoneyPatch patch={patch} key={`honey-${index}`} />
+                        ))}
+                    </AnimatePresence>
+                    <AnimatePresence>
+                        {gameState.milkPatches.map((patch, index) => (
+                            <RenderMilkPatch patch={patch} key={`milk-${index}`} />
+                        ))}
+                    </AnimatePresence>
                     {gameState.isPaused && (
-                        <div className="absolute top-0 right-0 bottom-0 left-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
+                        <div className="absolute top-0 right-0 bottom-0 left-0 z-20 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
                             {gameState.resumeGracePeriodSeconds > 0 ? (
                                 <>
                                     <div>RESUMING</div>
@@ -236,14 +279,14 @@ const CowAvatar = (props: { breed: CowBreed }) => (
 );
 
 const RenderCloud = ({ cloud }: { cloud: { pos: { x: number; y: number } } }) => {
-    const size = config.cellSize * 8;
+    const size = config.cellSize * config.cloudRadius * 2;
     const offset = (size - config.cellSize) / 2;
 
     return (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: 2.0 } }}
             className="absolute rounded-full bg-stone-500"
             style={{
                 height: size,
@@ -253,7 +296,65 @@ const RenderCloud = ({ cloud }: { cloud: { pos: { x: number; y: number } } }) =>
                 filter: 'blur(16px)',
                 zIndex: 10,
             }}
-            transition={{ duration: 2.0, ease: 'easeOut' }}
+            transition={{
+                duration: 2.0,
+                ease: 'easeOut',
+                opacity: { duration: 0.5 },
+            }}
+        />
+    );
+};
+
+const RenderHoneyPatch = ({ patch }: { patch: { pos: { x: number; y: number } } }) => {
+    const size = config.cellSize * config.honeyPatchRadius * 2;
+    const offset = (size - config.cellSize) / 2;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.8 }}
+            exit={{ opacity: 0, transition: { duration: 2.0 } }}
+            className="absolute rounded-full bg-amber-500"
+            style={{
+                height: size,
+                width: size,
+                top: patch.pos.y * config.cellSize - offset,
+                left: patch.pos.x * config.cellSize - offset,
+                filter: 'blur(16px)',
+                zIndex: 3,
+            }}
+            transition={{
+                duration: 2.0,
+                ease: 'easeOut',
+                opacity: { duration: 0.5 },
+            }}
+        />
+    );
+};
+
+const RenderMilkPatch = ({ patch }: { patch: { pos: { x: number; y: number } } }) => {
+    const size = config.cellSize * config.milkPatchRadius * 2;
+    const offset = (size - config.cellSize) / 2;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.8 }}
+            exit={{ opacity: 0, transition: { duration: 2.0 } }}
+            className="absolute rounded-full bg-slate-200"
+            style={{
+                height: size,
+                width: size,
+                top: patch.pos.y * config.cellSize - offset,
+                left: patch.pos.x * config.cellSize - offset,
+                filter: 'blur(16px)',
+                zIndex: 3,
+            }}
+            transition={{
+                duration: 2.0,
+                ease: 'easeOut',
+                opacity: { duration: 0.5 },
+            }}
         />
     );
 };
@@ -277,6 +378,7 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
                         backgroundImage: "url('/sprite.png')",
                         backgroundSize: spriteBgSize,
                         backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].head),
+                        zIndex: 5,
                     }}
                 >
                     &nbsp;
@@ -301,6 +403,7 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
                                 backgroundImage: "url('/sprite.png')",
                                 backgroundSize: spriteBgSize,
                                 backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].middle),
+                                zIndex: 5,
                             }}
                         >
                             &nbsp;
@@ -319,6 +422,7 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
                                 backgroundImage: "url('/sprite.png')",
                                 backgroundSize: spriteBgSize,
                                 backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].bend),
+                                zIndex: 5,
                             }}
                         >
                             &nbsp;
@@ -346,6 +450,7 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
                         backgroundImage: "url('/sprite.png')",
                         backgroundSize: spriteBgSize,
                         backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].tail),
+                        zIndex: 5,
                     }}
                 >
                     &nbsp;
@@ -355,27 +460,25 @@ const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: C
     );
 };
 
-const RenderFood = (props: { food: Food }) => (
-    <div
-        className="absolute flex items-center justify-center text-white"
-        style={{
-            height: config.cellSize,
-            width: config.cellSize,
-            top: props.food.pos.y * config.cellSize,
-            left: props.food.pos.x * config.cellSize,
-            backgroundImage: "url('/sprite.png')",
-            backgroundSize: spriteBgSize,
-            backgroundPosition: getSpriteBgPos(
-                props.food.type === 'tuft'
-                    ? sprites.food.tuft
-                    : props.food.type === 'honey'
-                    ? sprites.food.honey
-                    : props.food.type === 'milk'
-                    ? sprites.food.milk
-                    : sprites.food.bean,
-            ),
-        }}
-    >
-        &nbsp;
-    </div>
-);
+const RenderFood = ({ food, className, isInline = false }: { food: Food; isInline?: boolean; className?: string }) => {
+    return (
+        <div
+            className={classNames(className, !isInline && 'absolute flex items-center justify-center text-white')}
+            style={{
+                height: config.cellSize,
+                width: config.cellSize,
+                ...(isInline
+                    ? {}
+                    : {
+                          top: food.pos.y * config.cellSize,
+                          left: food.pos.x * config.cellSize,
+                      }),
+                backgroundImage: "url('/sprite.png')",
+                backgroundSize: spriteBgSize,
+                backgroundPosition: getSpriteBgPos(sprites.food[food.type]),
+            }}
+        >
+            &nbsp;
+        </div>
+    );
+};

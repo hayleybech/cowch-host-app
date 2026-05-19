@@ -48,6 +48,16 @@ const shiftPos = (pos: Position, dir: Direction): Position => {
         y: pos.y,
     };
 };
+
+export const dash = <T extends CowPiece>(piece: T, distance: number): T => {
+    let currentPiece = piece;
+    for (let i = 0; i < distance; i++) {
+        currentPiece = move([], currentPiece);
+    }
+
+    return currentPiece;
+};
+
 export type Direction = 'up' | 'down' | 'right' | 'left';
 
 export function playerHasCollidedWithAnyFood(playerPos: Position, food: Food[]): Food | undefined {
@@ -68,11 +78,11 @@ export function getSecondLastPiece(piece: CowPiece, prevPiece: CowPiece): CowPie
     return getSecondLastPiece(piece.nextPiece, piece);
 }
 
-export function playerHasCollidedWithAnyPlayer(playerA: AlivePlayer, players: Player[]): boolean {
-    return players.some((playerB) => playerHasCollidedWithPlayer(playerA, playerB));
+export function playerHasHeadbuttedAnyPlayer(playerA: AlivePlayer, players: Player[]): boolean {
+    return players.some((playerB) => playerHasHeadbuttedPlayer(playerA, playerB));
 }
 
-function playerHasCollidedWithPlayer(playerA: AlivePlayer, playerB: Player): boolean {
+export function playerHasHeadbuttedPlayer(playerA: AlivePlayer, playerB: Player): boolean {
     if (!isAlive(playerA) || !isAlive(playerB)) {
         return false;
     }
@@ -134,6 +144,20 @@ export function posIsEqual(posA: Position, posB: Position): boolean {
 
 export function isAlive(player: Player): player is AlivePlayer {
     return player.isAlive;
+}
+
+export function isCowInHoneyPatch(headPiece: CowHead, patchPos: Position, radius: number): boolean {
+    const dx = headPiece.pos.x - patchPos.x;
+    const dy = headPiece.pos.y - patchPos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return distance <= radius;
+}
+
+export function isCowInMilkPatch(headPiece: CowHead, patchPos: Position, radius: number): boolean {
+    const dx = headPiece.pos.x - patchPos.x;
+    const dy = headPiece.pos.y - patchPos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return distance <= radius;
 }
 
 export function isValidDirection(headPiece: CowHead, requestedDir: Direction): boolean {

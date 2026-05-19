@@ -38,6 +38,16 @@ export type Cell = {
     rotation: string;
 };
 
+export type HoneyPatch = {
+    pos: Position;
+    ticksRemaining: number;
+};
+
+export type MilkPatch = {
+    pos: Position;
+    ticksRemaining: number;
+};
+
 export type GameState = {
     players: Player[];
     food: Food[];
@@ -49,6 +59,8 @@ export type GameState = {
     connections: DataConnection[];
     pendingConnections: PendingConnection[];
     clouds: Cloud[];
+    honeyPatches: HoneyPatch[];
+    milkPatches: MilkPatch[];
 };
 
 export type PendingConnection = {
@@ -74,7 +86,8 @@ export type PlayerAction =
           type: 'move';
           payload: Direction;
       }
-    | { type: 'drop' }
+    | { type: 'drop_powerup' }
+    | { type: 'use_powerup' }
     | { type: 'pause' };
 
 export type GameNotification =
@@ -102,6 +115,8 @@ export type GameAction =
     | { type: 'REQUEST_TOGGLE_PAUSE' }
     | { type: 'TICK_RESUME_COUNTDOWN' }
     | { type: 'DROP_TRAP'; payload: { playerId: string } }
+    | { type: 'APPLY_POWERUP'; payload: { playerId: string } }
+    | { type: 'TOGGLE_FREEZE_PLAYER'; payload: { playerId: string } }
     | { type: 'TICK' };
 
 export type AlivePlayer = {
@@ -113,7 +128,8 @@ export type AlivePlayer = {
     breed: CowBreed;
     slowedTicks: number;
     boostedTicks: number;
-    canDropCloud: boolean;
+    storedPowerup: Food | null;
+    isFrozen?: boolean;
 };
 export type DeadPlayer = {
     id: string;

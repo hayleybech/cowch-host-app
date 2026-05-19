@@ -16,8 +16,14 @@ export const config = {
     ticksPerBoostMove: 1,
     slowedTicksDuration: 20,
     boostedTicksDuration: 20,
+    dashDistance: 4,
     cloudDurationTicks: 40,
     resumeGracePeriod: 3,
+    honeyPatchRadius: 4,
+    milkPatchRadius: 4,
+    cloudRadius: 4,
+
+    isDebugEnabled: false,
 } as const;
 
 export const sprites = {

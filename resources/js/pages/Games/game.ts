@@ -1,16 +1,20 @@
 import { getWeightedRandomElement } from '@/lib/utils';
 import { config } from '@/pages/Games/config';
 import {
-    Direction, getRandomPosition,
-    getSecondLastPiece,
+    dash,
+    getRandomPosition,
     getTail,
     grow,
     isAlive,
+    isCowInHoneyPatch,
+    isCowInMilkPatch,
     isValidDirection,
     move,
     playerHasCollidedWithAnyFood,
-    playerHasCollidedWithAnyPlayer,
-    playerHasCollidedWithAnyWall, posIsEqual
+    playerHasCollidedWithAnyWall,
+    playerHasHeadbuttedAnyPlayer,
+    playerHasHeadbuttedPlayer,
+    posIsEqual
 } from '@/pages/Games/cow';
 import {
     AlivePlayer,
@@ -19,6 +23,7 @@ import {
     CowMiddle,
     CowPiece,
     CowTail,
+    Food,
     GameAction,
     GameNotification,
     GameState,
@@ -106,7 +111,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
             breed: action.payload.breed,
             slowedTicks: 0,
             boostedTicks: 0,
-            canDropCloud: false,
+            storedPowerup: null,
         };
 
         const nextPlayers = [...state.players, player];
@@ -230,29 +235,109 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'DROP_TRAP') {
-        const player = state.players.find((p) => p.id === action.payload.playerId);
-        if (!player || !isAlive(player) || !player.canDropCloud) {
+        const playerIdx = state.players.findIndex((p) => p.id === action.payload.playerId);
+        const player = state.players[playerIdx];
+        if (!player || !isAlive(player)) {
             return state;
         }
 
         const tail = getTail(player.headPiece);
-        const newCloud = {
-            pos: { ...tail.pos },
-            ticksRemaining: config.cloudDurationTicks,
-        };
+        const updatedPlayers = [...state.players];
+        updatedPlayers[playerIdx] = { ...player, storedPowerup: null };
+        broadcastTo(state.connections, player.id, { type: 'powerup_used' });
 
-        const updatedPlayers = state.players.map((p) => {
-            if (p.id === action.payload.playerId && isAlive(p)) {
-                broadcastTo(state.connections, p.id, { type: 'powerup_used' });
-                return { ...p, canDropCloud: false };
-            }
-            return p;
-        });
+        if (player.storedPowerup && player.storedPowerup.type === 'bean') {
+            const newCloud = {
+                pos: { ...tail.pos },
+                ticksRemaining: config.cloudDurationTicks,
+            };
+            return {
+                ...state,
+                players: updatedPlayers,
+                clouds: [...state.clouds, newCloud],
+            };
+        }
+
+        if (player.storedPowerup && player.storedPowerup.type === 'honey') {
+            const newHoneyPatch = {
+                pos: { ...tail.pos },
+                ticksRemaining: config.cloudDurationTicks,
+            };
+
+            return {
+                ...state,
+                players: updatedPlayers,
+                honeyPatches: [...state.honeyPatches, newHoneyPatch],
+            };
+        }
+
+    if (player.storedPowerup && player.storedPowerup.type === 'milk') {
+            const newMilkPatch = {
+                pos: { ...tail.pos },
+                ticksRemaining: config.cloudDurationTicks,
+            };
+
+            return {
+                ...state,
+                players: updatedPlayers,
+                milkPatches: [...state.milkPatches, newMilkPatch],
+            };
+        }
+
+        return state;
+    }
+
+    if (action.type === 'APPLY_POWERUP') {
+        const playerIdx = state.players.findIndex((p) => p.id === action.payload.playerId);
+        const player = state.players[playerIdx];
+
+        if (!player || !isAlive(player) || !player.storedPowerup) {
+            return state;
+        }
+
+        const food = player.storedPowerup;
+        const updatedPlayers = [...state.players];
+        const updatedPlayer = { ...player, storedPowerup: null };
+        updatedPlayers[playerIdx] = updatedPlayer;
+        broadcastTo(state.connections, player.id, { type: 'powerup_used' });
+
+        if (food.type === 'honey') {
+            updatedPlayer.boostedTicks = 0;
+            updatedPlayer.slowedTicks += config.slowedTicksDuration;
+        }
+
+        if (food.type === 'milk') {
+            updatedPlayer.slowedTicks = 0;
+            updatedPlayer.boostedTicks += config.boostedTicksDuration;
+        }
+
+        let updatedFood = [...state.food];
+        if (food.type === 'bean') {
+            updatedPlayer.headPiece = dash(updatedPlayer.headPiece, config.dashDistance);
+            killRammedOpponents(updatedPlayer as AlivePlayer, updatedPlayers);
+            updatedFood = removeTrampledFood(updatedPlayer as AlivePlayer, state.food);
+        }
 
         return {
             ...state,
             players: updatedPlayers,
-            clouds: [...state.clouds, newCloud],
+            food: updatedFood,
+        };
+    }
+
+    if (action.type === 'TOGGLE_FREEZE_PLAYER') {
+        const playerIdx = state.players.findIndex((p) => p.id === action.payload.playerId);
+        const player = state.players[playerIdx];
+
+        if (!player || !isAlive(player)) {
+            return state;
+        }
+
+        const updatedPlayers = [...state.players];
+        updatedPlayers[playerIdx] = { ...player, isFrozen: !player.isFrozen };
+        return {
+            ...state,
+            players: updatedPlayers,
         };
     }
 
@@ -264,16 +349,61 @@ export function reducer(state: GameState, action: GameAction): GameState {
             }))
             .filter((cloud) => cloud.ticksRemaining > 0);
 
+        const updatedHoneyPatches = state.honeyPatches
+            .map((patch) => ({
+                ...patch,
+                ticksRemaining: patch.ticksRemaining - 1,
+            }))
+            .filter((patch) => patch.ticksRemaining > 0);
+
+        const updatedMilkPatches = state.milkPatches
+            .map((patch) => ({
+                ...patch,
+                ticksRemaining: patch.ticksRemaining - 1,
+            }))
+            .filter((patch) => patch.ticksRemaining > 0);
+
         return {
             ...state,
             tickCount: state.tickCount + 1,
             clouds: updatedClouds,
+            honeyPatches: updatedHoneyPatches,
+            milkPatches: updatedMilkPatches,
         };
     }
 
     return state;
 }
 
+const killRammedOpponents = (
+    player: AlivePlayer,
+    updatedPlayers: Player[],
+) => {
+    // Check for collisions after teleporting
+    // Kill other players that collide with any part of this cow
+    updatedPlayers.forEach((otherPlayer, idx) => {
+        if (otherPlayer.id === player.id || !isAlive(otherPlayer)) {
+            return;
+        }
+
+        if (playerHasHeadbuttedPlayer(player, otherPlayer) || playerHasHeadbuttedPlayer(otherPlayer, player)) {
+            updatedPlayers[idx] = {
+                ...otherPlayer,
+                isAlive: false,
+            } as Player;
+        }
+    });
+};
+
+const removeTrampledFood = (
+    player: AlivePlayer,
+    food: Food[],
+) => {
+    // Remove any food that collides with any part of the cow
+    return food.filter((f) => !cowHasPieceInPosition(player.headPiece, f.pos));
+};
+
+// findAvailablePosition
 // @todo make this more efficient
 // - this will become slower the less room there is on the board
 // - it would be more performant to generate a list of possible positions,
@@ -303,7 +433,15 @@ const positionHasPiece = (state: GameState, pos: Position) => {
         return posIsEqual(cloud.pos, pos);
     });
 
-    return posHasPlayer || posHasFood || posHasCloud;
+    const posHasHoney = state.honeyPatches.some((patch) => {
+        return posIsEqual(patch.pos, pos);
+    });
+
+    const posHasMilk = state.milkPatches.some((patch) => {
+        return posIsEqual(patch.pos, pos);
+    });
+
+    return posHasPlayer || posHasFood || posHasCloud || posHasHoney || posHasMilk;
 }
 
 const cowHasPieceInPosition = (piece: CowPiece, pos: Position) => {
@@ -337,6 +475,10 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
 
         const tempPlayer = { ...player };
 
+        if (tempPlayer.isFrozen) {
+            return tempPlayer;
+        }
+
         // Regular speed
         let moveThisTick = state.tickCount % config.ticksPerRegularMove === 0;
 
@@ -351,6 +493,26 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
             tempPlayer.slowedTicks--;
             // Slowed speed is moving every 4th tick
             moveThisTick = state.tickCount % config.ticksPerSlowMove === 0;
+        }
+
+        // Honey patch slow
+        const isInHoneyPatch = state.honeyPatches.some((patch) =>
+            isCowInHoneyPatch(tempPlayer.headPiece, patch.pos, config.honeyPatchRadius),
+        );
+
+        if (isInHoneyPatch) {
+            console.log('player is in honey patch');
+            moveThisTick = state.tickCount % config.ticksPerSlowMove === 0;
+        }
+
+        // Milk patch fast
+        const isInMilkPatch = state.milkPatches.some((patch) =>
+            isCowInMilkPatch(tempPlayer.headPiece, patch.pos, config.milkPatchRadius),
+        );
+
+        if (isInMilkPatch) {
+            console.log('player is in milk patch');
+            moveThisTick = state.tickCount % config.ticksPerBoostMove === 0;
         }
 
         if (!moveThisTick) {
@@ -379,20 +541,14 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
             const playerOld = state.players.find((playerA) => playerA.id === player.id) as AlivePlayer;
             grow(player, playerOld);
 
-            if (foodCollided.type === 'honey') {
-                player.boostedTicks = 0;
-                player.slowedTicks += config.slowedTicksDuration;
+            if (foodCollided.type === 'tuft') {
+                // Tuft is eaten immediately
+                return player
             }
 
-            if (foodCollided.type === 'milk') {
-                player.slowedTicks = 0;
-                player.boostedTicks += config.boostedTicksDuration;
-            }
-
-            if (foodCollided.type === 'bean') {
-                player.canDropCloud = true;
-                broadcastTo(state.connections, player.id, { type: 'powerup_stored' });
-            }
+            // Store powerup for later
+            player.storedPowerup = foodCollided;
+            broadcastTo(state.connections, player.id, { type: 'powerup_stored' });
         }
         return player;
     });
@@ -403,7 +559,7 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
             return player;
         }
 
-        if (playerHasCollidedWithAnyPlayer(player, players) || playerHasCollidedWithAnyWall(player)) {
+        if (playerHasHeadbuttedAnyPlayer(player, players) || playerHasCollidedWithAnyWall(player)) {
             return {
                 ...player,
                 isAlive: false,
