@@ -1,9 +1,16 @@
 import { generateRandomString, getRandomElement } from '@/lib/utils';
-import { getRotationFromSurroundingPieces, isAlive, shouldUseStraightPiece } from '@/pages/Games/cow';
+import {
+    getRotationFromSurroundingPieces,
+    isAlive,
+    isCowInHoneyPatch,
+    isCowInMilkPatch,
+    shouldUseStraightPiece,
+} from '@/pages/Games/cow';
 import { movePlayers, reducer } from '@/pages/Games/game';
 import { CowBreed, CowPiece, Food, PlayerAction } from '@/pages/Games/types';
 import classNames from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Snail, Zap } from 'lucide-react';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
@@ -180,9 +187,40 @@ export const CowGame = () => {
                                             )}
                                         </div>
 
-                                        {isAlive(player) && player.storedPowerup && (
-                                            <RenderFood food={player.storedPowerup} isInline />
-                                        )}
+                                        <div
+                                            className="flex items-center justify-center"
+                                            style={{ width: config.cellSize, height: config.cellSize }}
+                                        >
+                                            {isAlive(player) && player.storedPowerup && (
+                                                <RenderFood food={player.storedPowerup} isInline />
+                                            )}
+                                        </div>
+                                        {isAlive(player) &&
+                                            (player.slowedTicks > 0 ||
+                                                gameState.honeyPatches.some((patch) =>
+                                                    isCowInHoneyPatch(
+                                                        player.headPiece,
+                                                        patch.pos,
+                                                        config.honeyPatchRadius,
+                                                    ),
+                                                )) && (
+                                                <div className="flex items-center justify-center p-1">
+                                                    <Snail className="h-6 w-6 text-amber-600" />
+                                                </div>
+                                            )}
+                                        {isAlive(player) &&
+                                            (player.boostedTicks > 0 ||
+                                                gameState.milkPatches.some((patch) =>
+                                                    isCowInMilkPatch(
+                                                        player.headPiece,
+                                                        patch.pos,
+                                                        config.milkPatchRadius,
+                                                    ),
+                                                )) && (
+                                                <div className="flex items-center justify-center p-1">
+                                                    <Zap className="h-6 w-6 text-blue-500" />
+                                                </div>
+                                            )}
                                     </div>
                                     <div>{player.score}</div>
                                 </li>
