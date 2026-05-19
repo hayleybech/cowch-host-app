@@ -5,6 +5,7 @@ import {
     getSecondLastPiece,
     getTail,
     isAlive,
+    isValidDirection,
     move,
     playerHasCollidedWithAnyFood,
     playerHasCollidedWithAnyPlayer,
@@ -141,12 +142,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         const requestedDir = action.payload.direction;
 
         // Validate input direction (prevent neck snapping)
-        if (
-            (currentDir === 'up' && requestedDir === 'down') ||
-            (currentDir === 'down' && requestedDir === 'up') ||
-            (currentDir === 'left' && requestedDir === 'right') ||
-            (currentDir === 'right' && requestedDir === 'left')
-        ) {
+        if (!isValidDirection(player.headPiece, requestedDir)) {
             return state;
         }
 

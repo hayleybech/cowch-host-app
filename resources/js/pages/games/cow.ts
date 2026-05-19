@@ -118,6 +118,31 @@ export function isAlive(player: Player): player is AlivePlayer {
     return player.isAlive;
 }
 
+export function isValidDirection(headPiece: CowHead, requestedDir: Direction): boolean {
+    const neckPiece = headPiece.nextPiece;
+    if (!neckPiece) {
+        return true;
+    }
+
+    const headPos = headPiece.pos;
+    const neckPos = neckPiece.pos;
+
+    if (requestedDir === 'up' && neckPos.y < headPos.y) {
+        return false;
+    }
+    if (requestedDir === 'down' && neckPos.y > headPos.y) {
+        return false;
+    }
+    if (requestedDir === 'left' && neckPos.x < headPos.x) {
+        return false;
+    }
+    if (requestedDir === 'right' && neckPos.x > headPos.x) {
+        return false;
+    }
+
+    return true;
+}
+
 export function shouldUseStraightPiece(piece: CowPiece, prevPiece: CowPiece, nextPiece: CowPiece): boolean {
     return prevPiece.pos.x === nextPiece.pos.x || prevPiece.pos.y === nextPiece.pos.y;
 }
