@@ -3,6 +3,7 @@ import { config } from '@/pages/Games/config';
 import {
     dash,
     getRandomPosition,
+    getHitPiece,
     getTail,
     grow,
     isAlive,
@@ -10,10 +11,10 @@ import {
     isCowInMilkPatch,
     isValidDirection,
     move,
+    shiftPos,
     playerHasCollidedWithAnyFood,
     playerHasCollidedWithAnyWall,
     playerHasHeadbuttedAnyPlayer,
-    playerHasHeadbuttedPlayer,
     posIsEqual
 } from '@/pages/Games/cow';
 import {
@@ -386,11 +387,50 @@ const killRammedOpponents = (
             return;
         }
 
-        if (playerHasHeadbuttedPlayer(player, otherPlayer) || playerHasHeadbuttedPlayer(otherPlayer, player)) {
-            updatedPlayers[idx] = {
-                ...otherPlayer,
-                isAlive: false,
-            } as Player;
+        let hitPiece: CowPiece | undefined;
+        let attackingPiece: CowPiece | undefined;
+
+        // Check if any piece of the attacking player hit any piece of the other player
+        let currentA: CowPiece | undefined = player.headPiece;
+        while (currentA) {
+            hitPiece = getHitPiece(currentA.pos, otherPlayer.headPiece);
+            if (hitPiece) {
+                attackingPiece = currentA;
+                break;
+            }
+            currentA = currentA.nextPiece;
+        }
+
+        if (hitPiece && attackingPiece) {
+            if (hitPiece === otherPlayer.headPiece || hitPiece === otherPlayer.headPiece.nextPiece) {
+                updatedPlayers[idx] = {
+                    ...otherPlayer,
+                    isAlive: false,
+                } as Player;
+            } else {
+                // Cut their tail off at the point of impact
+                // Find the piece before the hit piece and make it the new tail
+                let current: CowPiece = otherPlayer.headPiece;
+                while (current.nextPiece && current.nextPiece !== hitPiece) {
+                    current = current.nextPiece;
+                }
+
+                // If we found the piece before the hit piece
+                if (current.nextPiece === hitPiece) {
+                    // Detach the rest of the pieces (they will be garbage collected)
+                    (current as unknown as CowTail).nextPiece = undefined;
+
+                    // Mark as tail
+                    (current as unknown as CowTail).type = 'tail';
+                } else if (current === hitPiece) {
+                    // This happens if the head piece itself was hit, but we already handled that above.
+                    // Or if current is already a tail and was hit.
+                    updatedPlayers[idx] = {
+                        ...otherPlayer,
+                        isAlive: false,
+                    } as Player;
+                }
+            }
         }
     });
 };

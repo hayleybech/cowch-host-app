@@ -22,7 +22,7 @@ export const move = <T extends CowPiece>(food: Food[], piece: T, queueDir?: Dire
     return newPiece;
 };
 
-const shiftPos = (pos: Position, dir: Direction): Position => {
+export const shiftPos = (pos: Position, dir: Direction): Position => {
     if (dir === 'up') {
         return {
             x: pos.x,
@@ -86,29 +86,37 @@ export function playerHasHeadbuttedPlayer(playerA: AlivePlayer, playerB: Player)
     if (!isAlive(playerA) || !isAlive(playerB)) {
         return false;
     }
-    if (playerA.headPiece !== playerB.headPiece && posIsEqual(playerA.headPiece.pos, playerB.headPiece.pos)) {
-        return true;
+
+    // Check if any piece of playerA overlaps with any piece of playerB
+    let currentA: CowPiece | undefined = playerA.headPiece;
+    while (currentA) {
+        const hitPiece = getHitPiece(currentA.pos, playerB.headPiece);
+        if (hitPiece) {
+            // Self-collision check
+            if (playerA.id === playerB.id) {
+                if (currentA !== hitPiece) {
+                    return true;
+                }
+            } else {
+                return true;
+            }
+        }
+        currentA = currentA.nextPiece;
     }
-    if (!playerB.headPiece.nextPiece) {
-        return false;
-    }
-    return playerHasCollidedWithPiece(playerA.headPiece.pos, playerB.headPiece.nextPiece);
+
+    return false;
 }
 
-function playerHasCollidedWithPiece(playerAHeadPos: Position, piece: CowPiece): boolean {
-    if (!piece.pos) {
-        return false;
-    }
-
+export function getHitPiece(playerAHeadPos: Position, piece: CowPiece): CowPiece | undefined {
     if (posIsEqual(playerAHeadPos, piece.pos)) {
-        return true;
+        return piece;
     }
 
     if (!piece.nextPiece) {
-        return false;
+        return undefined;
     }
 
-    return playerHasCollidedWithPiece(playerAHeadPos, piece.nextPiece);
+    return getHitPiece(playerAHeadPos, piece.nextPiece);
 }
 
 export function playerHasCollidedWithAnyWall(player: AlivePlayer): boolean {
