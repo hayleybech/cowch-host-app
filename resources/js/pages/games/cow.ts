@@ -1,6 +1,6 @@
 import { getRandomNumber } from '@/lib/utils';
 import { config } from './config';
-import { AlivePlayer, CowPiece, Food, Player, Position } from './types';
+import { AlivePlayer, CowHead, CowPiece, CowTail, Food, Player, Position } from './types';
 
 export const getRandomPosition = (): Position => ({
     x: getRandomNumber(2, config.cols - 2), // Ensure tail doesn't spawn off left edge (all players spawn facing right)

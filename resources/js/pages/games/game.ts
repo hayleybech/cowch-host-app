@@ -139,7 +139,6 @@ export function reducer(state: GameState, action: GameAction): GameState {
             return state;
         }
 
-        const currentDir = player.headPiece.dir;
         const requestedDir = action.payload.direction;
 
         // Validate input direction (prevent neck snapping)
