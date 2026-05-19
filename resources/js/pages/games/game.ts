@@ -4,6 +4,7 @@ import {
     Direction, getRandomPosition,
     getSecondLastPiece,
     getTail,
+    grow,
     isAlive,
     isValidDirection,
     move,
@@ -375,30 +376,18 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
             // Remove Food
             dispatch({ type: 'REMOVE_FOOD', payload: { x: foodCollided.pos.x, y: foodCollided.pos.y } });
 
-            if (foodCollided.type === 'tuft') {
-                // Grow tail
-                const playerOld = state.players.find((playerA) => playerA.id === player.id) as AlivePlayer;
-                const slpOld = getSecondLastPiece(playerOld.headPiece.nextPiece, playerOld.headPiece);
-                getSecondLastPiece(player.headPiece.nextPiece as CowPiece, player.headPiece).nextPiece = {
-                    type: 'middle',
-                    pos: { ...(slpOld.pos as Position) },
-                    dir: slpOld.dir as Direction,
-                    nextPiece: {
-                        type: 'tail',
-                        pos: { ...(slpOld.nextPiece?.pos as Position) },
-                        dir: slpOld.nextPiece?.dir as Direction,
-                        nextPiece: undefined,
-                    },
-                };
-                player.score++;
-            }
+            // Grow tail
+            const playerOld = state.players.find((playerA) => playerA.id === player.id) as AlivePlayer;
+            grow(player, playerOld);
 
             if (foodCollided.type === 'honey') {
-                player.slowedTicks = config.slowedTicksDuration;
+                player.boostedTicks = 0;
+                player.slowedTicks += config.slowedTicksDuration;
             }
 
             if (foodCollided.type === 'milk') {
-                player.boostedTicks = config.boostedTicksDuration;
+                player.slowedTicks = 0;
+                player.boostedTicks += config.boostedTicksDuration;
             }
 
             if (foodCollided.type === 'bean') {

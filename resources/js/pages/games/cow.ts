@@ -110,6 +110,24 @@ export function playerHasCollidedWithAnyWall(player: AlivePlayer): boolean {
     );
 }
 
+export function grow(player: AlivePlayer, oldPlayer: AlivePlayer): void {
+    const slpOld = getSecondLastPiece(oldPlayer.headPiece.nextPiece, oldPlayer.headPiece);
+    const slpCurrent = getSecondLastPiece(player.headPiece.nextPiece as CowPiece, player.headPiece);
+
+    slpCurrent.nextPiece = {
+        type: 'middle',
+        pos: { ...(slpOld.pos as Position) },
+        dir: slpOld.dir as Direction,
+        nextPiece: {
+            type: 'tail',
+            pos: { ...(slpOld.nextPiece?.pos as Position) },
+            dir: slpOld.nextPiece?.dir as Direction,
+            nextPiece: undefined,
+        },
+    };
+    player.score++;
+}
+
 export function posIsEqual(posA: Position, posB: Position): boolean {
     return posA.x === posB.x && posA.y === posB.y;
 }
