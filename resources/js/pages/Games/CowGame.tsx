@@ -42,12 +42,14 @@ export const CowGame = () => {
     });
 
     useEffect(() => {
-        const joinCode = generateRandomString(4, true, false, false);
+        const savedJoinCode = localStorage.getItem('cowch-join-code');
+        const joinCode = savedJoinCode || generateRandomString(4, true, false, false);
         const peer = new Peer(`COWCH-${joinCode}`);
         peerRef.current = peer;
 
         peer.on('open', function () {
             setJoinCode(joinCode);
+            localStorage.setItem('cowch-join-code', joinCode);
         });
 
         peer.on('connection', function (conn: DataConnection) {
