@@ -298,6 +298,64 @@ export const CowGame = () => {
                     )}
                 </div>
             </div>
+            <div className="mt-4 flex w-full justify-center gap-8 bg-neutral-800 p-4 text-white">
+                <div className="flex items-center gap-4">
+                    <RenderFood food={{ type: 'tuft', pos: { x: 0, y: 0 } }} isInline />
+                    <div>
+                        <div className="font-bold text-green-500 uppercase">Tuft</div>
+                        <div className="text-xs">
+                            <div>
+                                Basic food
+                            </div>
+                            <div>
+                                All foods make you longer!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-4">
+                    <RenderFood food={{ type: 'honey', pos: { x: 0, y: 0 } }} isInline />
+                    <div>
+                        <div className="font-bold text-amber-500 uppercase">Honey</div>
+                        <div className="text-xs">
+                            <div>
+                                <span className="font-semibold">Use:</span> Slows self
+                            </div>
+                            <div>
+                                <span className="font-semibold">Drop:</span> Slows everyone
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-4">
+                    <RenderFood food={{ type: 'milk', pos: { x: 0, y: 0 } }} isInline />
+                    <div>
+                        <div className="font-bold text-blue-400 uppercase">Milk</div>
+                        <div className="text-xs">
+                            <div>
+                                <span className="font-semibold">Use:</span> Boosts self
+                            </div>
+                            <div>
+                                <span className="font-semibold">Drop:</span> Boosts everyone
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-4">
+                    <RenderFood food={{ type: 'bean', pos: { x: 0, y: 0 } }} isInline />
+                    <div>
+                        <div className="font-bold text-lime-500 uppercase">Bean</div>
+                        <div className="text-xs">
+                            <div>
+                                <span className="font-semibold">Use:</span> Trample
+                            </div>
+                            <div>
+                                <span className="font-semibold">Drop:</span> Blinding fart cloud
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
