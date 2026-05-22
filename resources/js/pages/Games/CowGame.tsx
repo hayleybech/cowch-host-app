@@ -145,7 +145,12 @@ export const CowGame = () => {
             <div className="flex w-full justify-between gap-8">
                 <div className="grow">
                     <div className="mb-8">
-                        <p className="text-[#706f6c]] mb-8 text-2xl font-extrabold">Join code: {joinCode}</p>
+                        <div className="mb-8 space-y-2">
+                            <p className="text-[#706f6c]] text-2xl">
+                                Join at <span className="font-extrabold">cowch.expo.app</span>
+                            </p>
+                            <p className="text-[#706f6c]] text-2xl">Lobby code: <span className="font-extrabold">{joinCode}</span></p>
+                        </div>
                         <p>
                             <button
                                 className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
@@ -304,12 +309,8 @@ export const CowGame = () => {
                     <div>
                         <div className="font-bold text-green-500 uppercase">Tuft</div>
                         <div className="text-xs">
-                            <div>
-                                Basic food
-                            </div>
-                            <div>
-                                All foods make you longer!
-                            </div>
+                            <div>Basic food</div>
+                            <div>All foods make you longer!</div>
                         </div>
                     </div>
                 </div>
