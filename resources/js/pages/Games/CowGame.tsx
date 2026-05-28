@@ -101,7 +101,10 @@ export const CowGame = () => {
                     });
                 }
                 if (action.type === 'pause') {
-                    dispatch({ type: 'REQUEST_TOGGLE_PAUSE' });
+                    dispatch({
+                        type: 'REQUEST_TOGGLE_PAUSE',
+                        payload: { playerId: conn.peer },
+                    });
                 }
             });
         });

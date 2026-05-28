@@ -91,6 +91,7 @@ export type PlayerAction =
     | { type: 'pause' };
 
 export type GameNotification =
+    | { type: 'died' }
     | { type: 'paused' }
     | { type: 'resumed' }
     | { type: 'powerup_stored' }
@@ -112,7 +113,7 @@ export type GameAction =
     | { type: 'UPDATE_PLAYERS'; payload: Player[] }
     | { type: 'SPAWN_FOOD' }
     | { type: 'REMOVE_FOOD'; payload: Position }
-    | { type: 'REQUEST_TOGGLE_PAUSE' }
+    | { type: 'REQUEST_TOGGLE_PAUSE'; payload?: { playerId: string } }
     | { type: 'TICK_RESUME_COUNTDOWN' }
     | { type: 'DROP_TRAP'; payload: { playerId: string } }
     | { type: 'APPLY_POWERUP'; payload: { playerId: string } }

@@ -11,7 +11,6 @@ import {
     isCowInMilkPatch,
     isValidDirection,
     move,
-    shiftPos,
     playerHasCollidedWithAnyFood,
     playerHasCollidedWithAnyWall,
     playerHasHeadbuttedAnyPlayer,
@@ -202,6 +201,13 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'REQUEST_TOGGLE_PAUSE') {
+        if (action.payload?.playerId) {
+            const player = state.players.find((p) => p.id === action.payload!.playerId);
+            if (player && !player.isAlive) {
+                return state;
+            }
+        }
+
         if (!state.isPaused) {
             broadcastToAll(state.connections, { type: 'paused' });
             return {
@@ -315,7 +321,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         let updatedFood = [...state.food];
         if (food.type === 'bean') {
             updatedPlayer.headPiece = dash(updatedPlayer.headPiece, config.dashDistance);
-            killRammedOpponents(updatedPlayer as AlivePlayer, updatedPlayers);
+            killRammedOpponents(updatedPlayer as AlivePlayer, updatedPlayers, state.connections);
             updatedFood = removeTrampledFood(updatedPlayer as AlivePlayer, state.food);
         }
 
@@ -379,6 +385,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
 const killRammedOpponents = (
     player: AlivePlayer,
     updatedPlayers: Player[],
+    connections: DataConnection[]
 ) => {
     // Check for collisions after teleporting
     // Kill other players that collide with any part of this cow
@@ -407,6 +414,7 @@ const killRammedOpponents = (
                     ...otherPlayer,
                     isAlive: false,
                 } as Player;
+                broadcastTo(connections, otherPlayer.id, { type: 'died' });
             } else {
                 // Cut their tail off at the point of impact
                 // Find the piece before the hit piece and make it the new tail
@@ -429,6 +437,7 @@ const killRammedOpponents = (
                         ...otherPlayer,
                         isAlive: false,
                     } as Player;
+                    broadcastTo(connections, otherPlayer.id, { type: 'died' });
                 }
             }
         }
@@ -600,6 +609,7 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
         }
 
         if (playerHasHeadbuttedAnyPlayer(player, players) || playerHasCollidedWithAnyWall(player)) {
+            broadcastTo(state.connections, player.id, { type: 'died' });
             return {
                 ...player,
                 isAlive: false,
