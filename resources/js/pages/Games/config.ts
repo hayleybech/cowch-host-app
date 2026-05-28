@@ -1,8 +1,9 @@
 export const config = {
     rows: 20,
-    cols: 30,
+    cols: 45,
     cellSize: 32,
     tick: 250,
+    suddenDeathTick: 150,
     // ticksPerFood: 20,
     ticksPerFood: 6, // debug
     foodWeights: {

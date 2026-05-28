@@ -62,6 +62,7 @@ export type GameState = {
     honeyPatches: HoneyPatch[];
     milkPatches: MilkPatch[];
     hasStarted: boolean;
+    isSuddenDeath: boolean;
     winner: Player | null;
 };
 

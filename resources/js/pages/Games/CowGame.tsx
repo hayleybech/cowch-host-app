@@ -29,6 +29,7 @@ const generateGrid = () => {
     }
     return cellsTemp;
 };
+
 export const CowGame = () => {
     const [joinCode, setJoinCode] = useState<string>();
     const peerRef = useRef<Peer>(null);
@@ -47,6 +48,7 @@ export const CowGame = () => {
         honeyPatches: [],
         milkPatches: [],
         hasStarted: false,
+        isSuddenDeath: false,
         winner: null,
     });
 
@@ -137,7 +139,7 @@ export const CowGame = () => {
             movePlayers(gameState, dispatch);
             dispatch({ type: 'SPAWN_FOOD' });
         },
-        gameState.isPaused ? null : config.tick,
+        gameState.isPaused ? null : (gameState.isSuddenDeath ? config.suddenDeathTick : config.tick),
     );
 
     const togglePause = useCallback(() => {
@@ -149,7 +151,7 @@ export const CowGame = () => {
     }, []);
 
     return (
-        <div className="flex flex-col bg-[#FDFDFC] p-6 text-[#1b1b18] lg:p-8">
+        <div className="flex flex-col bg-neutral-800 p-6 text-white lg:p-8 h-screen">
             <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
                 <nav className="flex items-center justify-start gap-4">
                     <img src="/cowch-logo.png" alt="Cowch" className="h-8" />
@@ -163,12 +165,14 @@ export const CowGame = () => {
                             <p className="text-[#706f6c]] text-2xl">
                                 Join at <span className="font-extrabold">cowch.expo.app</span>
                             </p>
-                            <p className="text-[#706f6c]] text-2xl">Lobby code: <span className="font-extrabold">{joinCode}</span></p>
+                            <p className="text-[#706f6c]] text-2xl">
+                                Lobby code: <span className="font-extrabold">{joinCode}</span>
+                            </p>
                         </div>
                         <p className="flex gap-4">
                             {!gameState.hasStarted || gameState.winner ? (
                                 <button
-                                    className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300 disabled:bg-neutral-500 disabled:cursor-not-allowed"
+                                    className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
                                     onClick={startGame}
                                     disabled={gameState.players.length === 0}
                                 >
@@ -195,7 +199,17 @@ export const CowGame = () => {
                                         <div className="flex flex-col">
                                             <div className="font-extrabold">
                                                 {player.username} {!player.isAlive && '(Dead)'}
+                                                {gameState.isSuddenDeath && player.isAlive && (
+                                                    <span className="ml-2 inline-flex animate-pulse items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                                                        Sudden Death
+                                                    </span>
+                                                )}
                                             </div>
+                                            {gameState.isSuddenDeath && !gameState.winner && (
+                                                <div className="mt-2 animate-bounce text-sm font-black text-red-500">
+                                                    SUDDEN DEATH ACTIVE!
+                                                </div>
+                                            )}
                                             {config.isDebugEnabled && isAlive(player) && (
                                                 <button
                                                     className={classNames(
@@ -313,6 +327,23 @@ export const CowGame = () => {
                             <RenderMilkPatch patch={patch} key={`milk-${index}`} />
                         ))}
                     </AnimatePresence>
+                    <AnimatePresence>
+                        {gameState.isSuddenDeath && !gameState.winner && (
+                            <motion.div
+                                key="sudden-death-toast"
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{
+                                    opacity: [0, 1, 1, 1, 0],
+                                    scale: [0, 1.2, 1, 1, 1.5],
+                                    y: [0, 0, 0, 0, -100],
+                                }}
+                                transition={{ duration: 3, times: [0, 0.1, 0.2, 0.8, 1] }}
+                                className="absolute top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2 transform rounded-lg bg-red-600 px-8 py-4 text-4xl font-black text-white shadow-2xl ring-4 ring-white"
+                            >
+                                SUDDEN DEATH!
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                     {gameState.isPaused && (
                         <div className="absolute top-0 right-0 bottom-0 left-0 z-20 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
                             {gameState.winner ? (
@@ -333,13 +364,13 @@ export const CowGame = () => {
                                 </>
                             ) : !gameState.hasStarted ? (
                                 <>
-                                    <div className="text-3xl mb-4 text-center">
+                                    <div className="mb-4 text-center text-3xl">
                                         Waiting for players...
                                         <br />
                                         <span className="text-lg font-normal">Press Start when ready!</span>
                                     </div>
                                     <button
-                                        className="mt-4 cursor-pointer rounded-sm bg-lime-500 px-8 py-3 text-xl font-extrabold text-white hover:bg-lime-400 active:bg-lime-300 disabled:bg-neutral-500 disabled:cursor-not-allowed"
+                                        className="mt-4 cursor-pointer rounded-sm bg-lime-500 px-8 py-3 text-xl font-extrabold text-white hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
                                         onClick={startGame}
                                         disabled={gameState.players.length === 0}
                                     >
@@ -353,60 +384,7 @@ export const CowGame = () => {
                     )}
                 </div>
             </div>
-            <div className="mt-4 flex w-full justify-center gap-8 bg-neutral-800 p-4 text-white">
-                <div className="flex items-center gap-4">
-                    <RenderFood food={{ type: 'tuft', pos: { x: 0, y: 0 } }} isInline />
-                    <div>
-                        <div className="font-bold text-green-500 uppercase">Tuft</div>
-                        <div className="text-xs">
-                            <div>Basic food</div>
-                            <div>All foods make you longer!</div>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-4">
-                    <RenderFood food={{ type: 'honey', pos: { x: 0, y: 0 } }} isInline />
-                    <div>
-                        <div className="font-bold text-amber-500 uppercase">Honey</div>
-                        <div className="text-xs">
-                            <div>
-                                <span className="font-semibold">Use:</span> Slows self
-                            </div>
-                            <div>
-                                <span className="font-semibold">Drop:</span> Slows everyone
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-4">
-                    <RenderFood food={{ type: 'milk', pos: { x: 0, y: 0 } }} isInline />
-                    <div>
-                        <div className="font-bold text-blue-400 uppercase">Milk</div>
-                        <div className="text-xs">
-                            <div>
-                                <span className="font-semibold">Use:</span> Boosts self
-                            </div>
-                            <div>
-                                <span className="font-semibold">Drop:</span> Boosts everyone
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-4">
-                    <RenderFood food={{ type: 'bean', pos: { x: 0, y: 0 } }} isInline />
-                    <div>
-                        <div className="font-bold text-lime-500 uppercase">Bean</div>
-                        <div className="text-xs">
-                            <div>
-                                <span className="font-semibold">Use:</span> Trample
-                            </div>
-                            <div>
-                                <span className="font-semibold">Drop:</span> Blinding fart cloud
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <PowerupLegend />
         </div>
     );
 };
@@ -631,3 +609,62 @@ const RenderFood = ({ food, className, isInline = false }: { food: Food; isInlin
         </div>
     );
 };
+
+function PowerupLegend() {
+    return (
+        <div className="mt-4 flex w-full justify-center gap-8 bg-neutral-800 p-4 text-white">
+            <div className="flex items-center gap-4">
+                <RenderFood food={{ type: 'tuft', pos: { x: 0, y: 0 } }} isInline />
+                <div>
+                    <div className="font-bold text-green-500 uppercase">Tuft</div>
+                    <div className="text-xs">
+                        <div>Basic food</div>
+                        <div>All foods make you longer!</div>
+                    </div>
+                </div>
+            </div>
+            <div className="flex items-center gap-4">
+                <RenderFood food={{ type: 'honey', pos: { x: 0, y: 0 } }} isInline />
+                <div>
+                    <div className="font-bold text-amber-500 uppercase">Honey</div>
+                    <div className="text-xs">
+                        <div>
+                            <span className="font-semibold">Use:</span> Slows self
+                        </div>
+                        <div>
+                            <span className="font-semibold">Drop:</span> Slows everyone
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="flex items-center gap-4">
+                <RenderFood food={{ type: 'milk', pos: { x: 0, y: 0 } }} isInline />
+                <div>
+                    <div className="font-bold text-blue-400 uppercase">Milk</div>
+                    <div className="text-xs">
+                        <div>
+                            <span className="font-semibold">Use:</span> Boosts self
+                        </div>
+                        <div>
+                            <span className="font-semibold">Drop:</span> Boosts everyone
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="flex items-center gap-4">
+                <RenderFood food={{ type: 'bean', pos: { x: 0, y: 0 } }} isInline />
+                <div>
+                    <div className="font-bold text-lime-500 uppercase">Bean</div>
+                    <div className="text-xs">
+                        <div>
+                            <span className="font-semibold">Use:</span> Trample
+                        </div>
+                        <div>
+                            <span className="font-semibold">Drop:</span> Blinding fart cloud
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

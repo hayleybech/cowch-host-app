@@ -261,6 +261,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
             honeyPatches: [],
             milkPatches: [],
             tickCount: 0,
+            isSuddenDeath: false,
             resumeGracePeriodSeconds: config.resumeGracePeriod,
         };
     }
@@ -706,6 +707,8 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
                 type: 'game_over',
                 payload: { winner: null },
             });
+        } else if (alivePlayers.length === 2 && !state.isSuddenDeath) {
+            state.isSuddenDeath = true;
         }
     }
 }
