@@ -46,6 +46,8 @@ export const CowGame = () => {
         clouds: [],
         honeyPatches: [],
         milkPatches: [],
+        hasStarted: false,
+        winner: null,
     });
 
     useEffect(() => {
@@ -106,6 +108,11 @@ export const CowGame = () => {
                         payload: { playerId: conn.peer },
                     });
                 }
+                if (action.type === 'start_game') {
+                    if (!gameState.hasStarted || gameState.winner) {
+                        dispatch({ type: 'REQUEST_START_GAME' });
+                    }
+                }
             });
         });
         peer.on('disconnected', () => {
@@ -137,6 +144,10 @@ export const CowGame = () => {
         dispatch({ type: 'REQUEST_TOGGLE_PAUSE' });
     }, []);
 
+    const startGame = useCallback(() => {
+        dispatch({ type: 'REQUEST_START_GAME' });
+    }, []);
+
     return (
         <div className="flex flex-col bg-[#FDFDFC] p-6 text-[#1b1b18] lg:p-8">
             <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
@@ -154,13 +165,23 @@ export const CowGame = () => {
                             </p>
                             <p className="text-[#706f6c]] text-2xl">Lobby code: <span className="font-extrabold">{joinCode}</span></p>
                         </div>
-                        <p>
-                            <button
-                                className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
-                                onClick={togglePause}
-                            >
-                                {gameState.isPaused ? 'Resume' : 'Pause'}
-                            </button>
+                        <p className="flex gap-4">
+                            {!gameState.hasStarted || gameState.winner ? (
+                                <button
+                                    className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300 disabled:bg-neutral-500 disabled:cursor-not-allowed"
+                                    onClick={startGame}
+                                    disabled={gameState.players.length === 0}
+                                >
+                                    {gameState.winner ? 'Play Again' : 'Start Game'}
+                                </button>
+                            ) : (
+                                <button
+                                    className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
+                                    onClick={togglePause}
+                                >
+                                    {gameState.isPaused ? 'Resume' : 'Pause'}
+                                </button>
+                            )}
                         </p>
                     </div>
                     {/* Scoreboard */}
@@ -294,10 +315,36 @@ export const CowGame = () => {
                     </AnimatePresence>
                     {gameState.isPaused && (
                         <div className="absolute top-0 right-0 bottom-0 left-0 z-20 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
-                            {gameState.resumeGracePeriodSeconds > 0 ? (
+                            {gameState.winner ? (
                                 <>
-                                    <div>RESUMING</div>
+                                    <div className="text-4xl">WINNER!</div>
+                                    <div className="text-5xl text-lime-400">{gameState.winner.username}</div>
+                                    <button
+                                        className="mt-4 cursor-pointer rounded-sm bg-lime-500 px-8 py-3 text-xl font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
+                                        onClick={startGame}
+                                    >
+                                        Play Again
+                                    </button>
+                                </>
+                            ) : gameState.resumeGracePeriodSeconds > 0 ? (
+                                <>
+                                    <div>{gameState.hasStarted ? 'RESUMING' : 'STARTING'}</div>
                                     <div className="text-3xl">{gameState.resumeGracePeriodSeconds}</div>
+                                </>
+                            ) : !gameState.hasStarted ? (
+                                <>
+                                    <div className="text-3xl mb-4 text-center">
+                                        Waiting for players...
+                                        <br />
+                                        <span className="text-lg font-normal">Press Start when ready!</span>
+                                    </div>
+                                    <button
+                                        className="mt-4 cursor-pointer rounded-sm bg-lime-500 px-8 py-3 text-xl font-extrabold text-white hover:bg-lime-400 active:bg-lime-300 disabled:bg-neutral-500 disabled:cursor-not-allowed"
+                                        onClick={startGame}
+                                        disabled={gameState.players.length === 0}
+                                    >
+                                        Start Game
+                                    </button>
                                 </>
                             ) : (
                                 'PAUSED'

@@ -61,6 +61,8 @@ export type GameState = {
     clouds: Cloud[];
     honeyPatches: HoneyPatch[];
     milkPatches: MilkPatch[];
+    hasStarted: boolean;
+    winner: Player | null;
 };
 
 export type PendingConnection = {
@@ -88,15 +90,18 @@ export type PlayerAction =
       }
     | { type: 'drop_powerup' }
     | { type: 'use_powerup' }
-    | { type: 'pause' };
+    | { type: 'pause' }
+    | { type: 'start_game' };
 
 export type GameNotification =
     | { type: 'died' }
     | { type: 'paused' }
     | { type: 'resumed' }
+    | { type: 'started' }
     | { type: 'powerup_stored' }
     | { type: 'powerup_used' }
     | { type: 'joined' }
+    | { type: 'game_over'; payload: { winner: string | null } }
     | { type: 'player_joined'; payload: CowBreed[] }
     | { type: 'changed_direction'; payload: Direction };
 
@@ -118,6 +123,8 @@ export type GameAction =
     | { type: 'DROP_TRAP'; payload: { playerId: string } }
     | { type: 'APPLY_POWERUP'; payload: { playerId: string } }
     | { type: 'TOGGLE_FREEZE_PLAYER'; payload: { playerId: string } }
+    | { type: 'START_GAME' }
+    | { type: 'REQUEST_START_GAME' }
     | { type: 'TICK' };
 
 export type AlivePlayer = {

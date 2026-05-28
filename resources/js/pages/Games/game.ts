@@ -200,6 +200,71 @@ export function reducer(state: GameState, action: GameAction): GameState {
         };
     }
 
+    if (action.type === 'START_GAME') {
+        return {
+            ...state,
+            hasStarted: true,
+            isPaused: false,
+        };
+    }
+
+    if (action.type === 'REQUEST_START_GAME') {
+        if(state.hasStarted && !state.winner) {
+            return state;
+        }
+
+        const resetPlayers = state.players.map((p) => {
+            const initialDirection = 'right';
+            const startXy = findAvailablePosition(state);
+            const cowTail: CowTail = {
+                type: 'tail',
+                pos: { x: startXy.x - 2, y: startXy.y },
+                dir: initialDirection,
+                nextPiece: undefined,
+            };
+            const cowMiddle: CowMiddle = {
+                type: 'middle',
+                pos: { x: startXy.x - 1, y: startXy.y },
+                dir: initialDirection,
+                nextPiece: cowTail,
+            };
+            const head: CowHead = {
+                type: 'head',
+                pos: startXy,
+                dir: initialDirection,
+                nextPiece: cowMiddle,
+            };
+
+            broadcastTo(state.connections, p.id, {
+                type: 'changed_direction',
+                payload: initialDirection,
+            });
+
+            return {
+                ...p,
+                isAlive: true,
+                headPiece: head,
+                slowedTicks: 0,
+                boostedTicks: 0,
+                storedPowerup: null,
+            };
+        });
+
+        return {
+            ...state,
+            players: resetPlayers,
+            hasStarted: false,
+            isPaused: true,
+            winner: null,
+            food: [],
+            clouds: [],
+            honeyPatches: [],
+            milkPatches: [],
+            tickCount: 0,
+            resumeGracePeriodSeconds: config.resumeGracePeriod,
+        };
+    }
+
     if (action.type === 'REQUEST_TOGGLE_PAUSE') {
         if (action.payload?.playerId) {
             const player = state.players.find((p) => p.id === action.payload!.playerId);
@@ -228,10 +293,11 @@ export function reducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'TICK_RESUME_COUNTDOWN') {
         const newValue = state.resumeGracePeriodSeconds - 1;
         if (newValue <= 0) {
-            broadcastToAll(state.connections, { type: 'resumed' });
+            broadcastToAll(state.connections, { type: state.hasStarted ? 'resumed' : 'started' });
             return {
                 ...state,
                 isPaused: false,
+                hasStarted: true,
                 resumeGracePeriodSeconds: 0,
             };
         }
@@ -622,4 +688,24 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
 
     // Commit new positions
     dispatch({ type: 'UPDATE_PLAYERS', payload: players });
+
+    if (state.hasStarted && !state.winner) {
+        const alivePlayers = players.filter((p) => p.isAlive);
+        if (alivePlayers.length === 1) {
+            dispatch({ type: 'UPDATE_PLAYERS', payload: players }); // Ensure last death is recorded
+            state.winner = alivePlayers[0];
+            state.isPaused = true;
+            broadcastToAll(state.connections, {
+                type: 'game_over',
+                payload: { winner: state.winner.username },
+            });
+        } else if (alivePlayers.length === 0) {
+            // Draw or everyone died at once
+            state.isPaused = true;
+            broadcastToAll(state.connections, {
+                type: 'game_over',
+                payload: { winner: null },
+            });
+        }
+    }
 }
