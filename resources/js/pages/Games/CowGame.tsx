@@ -151,7 +151,7 @@ export const CowGame = () => {
     }, []);
 
     return (
-        <div className="flex flex-col bg-neutral-800 p-6 text-white lg:p-8 h-screen">
+        <div className="flex h-screen flex-col bg-neutral-800 p-6 text-white lg:p-8">
             <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
                 <nav className="flex items-center justify-start gap-4">
                     <img src="/cowch-logo.png" alt="Cowch" className="h-8" />

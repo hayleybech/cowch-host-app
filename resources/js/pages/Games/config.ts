@@ -32,8 +32,8 @@ export const sprites = {
     pixelRatio: 1,
     ground: {
         grass: {
-            x: 4,
-            y: 0,
+            x: 7,
+            y: 1,
         },
     },
     food: {
@@ -140,6 +140,94 @@ export const sprites = {
             },
             sideView: {
                 x: 0,
+                y: 6,
+            },
+        },
+        belted_galloway: {
+            head: {
+                x: 7,
+                y: 0,
+            },
+            middle: {
+                x: 5,
+                y: 1,
+            },
+            bend: {
+                x: 6,
+                y: 0,
+            },
+            tail: {
+                x: 4,
+                y: 1,
+            },
+            sideView: {
+                x: 4,
+                y: 0,
+            },
+        },
+        british_white: {
+            head: {
+                x: 7,
+                y: 2,
+            },
+            middle: {
+                x: 5,
+                y: 3,
+            },
+            bend: {
+                x: 6,
+                y: 2,
+            },
+            tail: {
+                x: 4,
+                y: 3,
+            },
+            sideView: {
+                x: 4,
+                y: 2,
+            },
+        },
+        droughtmaster: {
+            head: {
+                x: 7,
+                y: 4,
+            },
+            middle: {
+                x: 5,
+                y: 5,
+            },
+            bend: {
+                x: 6,
+                y: 4,
+            },
+            tail: {
+                x: 4,
+                y: 5,
+            },
+            sideView: {
+                x: 4,
+                y: 4,
+            },
+        },
+        jersey: {
+            head: {
+                x: 7,
+                y: 6,
+            },
+            middle: {
+                x: 5,
+                y: 7,
+            },
+            bend: {
+                x: 6,
+                y: 6,
+            },
+            tail: {
+                x: 4,
+                y: 7,
+            },
+            sideView: {
+                x: 4,
                 y: 6,
             },
         },
