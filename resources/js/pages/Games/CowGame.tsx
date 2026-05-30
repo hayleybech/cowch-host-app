@@ -199,17 +199,7 @@ export const CowGame = () => {
                                         <div className="flex flex-col">
                                             <div className="font-extrabold">
                                                 {player.username} {!player.isAlive && '(Dead)'}
-                                                {gameState.isSuddenDeath && player.isAlive && (
-                                                    <span className="ml-2 inline-flex animate-pulse items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
-                                                        Sudden Death
-                                                    </span>
-                                                )}
                                             </div>
-                                            {gameState.isSuddenDeath && !gameState.winner && (
-                                                <div className="mt-2 animate-bounce text-sm font-black text-red-500">
-                                                    SUDDEN DEATH ACTIVE!
-                                                </div>
-                                            )}
                                             {config.isDebugEnabled && isAlive(player) && (
                                                 <button
                                                     className={classNames(
@@ -338,7 +328,7 @@ export const CowGame = () => {
                                     y: [0, 0, 0, 0, -100],
                                 }}
                                 transition={{ duration: 3, times: [0, 0.1, 0.2, 0.8, 1] }}
-                                className="absolute top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2 transform rounded-lg bg-red-600 px-8 py-4 text-4xl font-black text-white shadow-2xl ring-4 ring-white"
+                                className="absolute top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2 transform rounded-lg px-8 py-4 text-4xl font-black text-red-600 shadow-2xl ring-4 text-shadow-lg"
                             >
                                 SUDDEN DEATH!
                             </motion.div>
