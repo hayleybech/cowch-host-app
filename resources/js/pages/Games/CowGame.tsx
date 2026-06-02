@@ -151,28 +151,29 @@ export const CowGame = () => {
     }, []);
 
     return (
-        <div className="flex h-screen flex-col bg-neutral-800 p-6 text-white lg:p-8">
-            <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
+        <div className="flex h-screen flex-col bg-neutral-800 text-white [text-shadow:_0.2em_0.2em_0_rgb(0_0_0)]">
+            <header className="mb-6 w-full max-w-[335px] px-4 py-2 text-sm not-has-[nav]:hidden lg:max-w-4xl">
                 <nav className="flex items-center justify-start gap-4">
-                    <img src="/cowch-logo.png" alt="Cowch" className="h-8" />
+                    {/*<img src="/cowch-logo.png" alt="Cowch" className="h-8" />*/}
+                    <h1 className="text-5xl text-white italic [text-shadow:_0.1em_0.1em_0_rgb(0_0_0)]">cowch</h1>
                 </nav>
             </header>
 
             <div className="flex w-full justify-between gap-8">
-                <div className="grow">
+                <div className="grow px-4">
                     <div className="mb-8">
                         <div className="mb-8 space-y-2">
-                            <p className="text-[#706f6c]] text-2xl">
-                                Join at <span className="font-extrabold">cowch.expo.app</span>
+                            <p className="text-2xl text-gray-300">
+                                Join at <span className="text-4xl text-white">cowch.expo.app</span>
                             </p>
-                            <p className="text-[#706f6c]] text-2xl">
-                                Lobby code: <span className="font-extrabold">{joinCode}</span>
+                            <p className="text-2xl text-gray-300">
+                                Lobby code: <span className="text-4xl text-white">{joinCode}</span>
                             </p>
                         </div>
                         <p className="flex gap-4">
                             {!gameState.hasStarted || gameState.winner ? (
                                 <button
-                                    className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
+                                    className="cursor-pointer bg-lime-500 px-4 py-2 text-xl text-white [text-shadow:_0.1em_0.1em_0_rgb(0_0_0)] hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
                                     onClick={startGame}
                                     disabled={gameState.players.length === 0}
                                 >
@@ -180,7 +181,7 @@ export const CowGame = () => {
                                 </button>
                             ) : (
                                 <button
-                                    className="cursor-pointer rounded-sm bg-lime-500 px-4 py-2 font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
+                                    className="cursor-pointer bg-lime-500 px-4 py-2 text-white hover:bg-lime-400 active:bg-lime-300"
                                     onClick={togglePause}
                                 >
                                     {gameState.isPaused ? 'Resume' : 'Pause'}
@@ -197,13 +198,13 @@ export const CowGame = () => {
                                         <CowAvatar breed={player.breed} />
 
                                         <div className="flex flex-col">
-                                            <div className="font-extrabold">
+                                            <div className="text-xl">
                                                 {player.username} {!player.isAlive && '(Dead)'}
                                             </div>
                                             {config.isDebugEnabled && isAlive(player) && (
                                                 <button
                                                     className={classNames(
-                                                        'w-fit cursor-pointer rounded px-2 py-0.5 text-xs font-bold text-white',
+                                                        'w-fit cursor-pointer px-2 py-0.5 text-sm text-white [text-shadow:_0.1em_0.1em_0_rgb(0_0_0)]',
                                                         player.isFrozen
                                                             ? 'bg-blue-600 hover:bg-blue-500'
                                                             : 'bg-blue-400 hover:bg-blue-300',
@@ -255,7 +256,7 @@ export const CowGame = () => {
                                                 </div>
                                             )}
                                     </div>
-                                    <div>{player.score}</div>
+                                    <div className="text-xl">{player.score}</div>
                                 </li>
                             ))}
                         </ul>
@@ -335,13 +336,13 @@ export const CowGame = () => {
                         )}
                     </AnimatePresence>
                     {gameState.isPaused && (
-                        <div className="absolute top-0 right-0 bottom-0 left-0 z-20 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl font-extrabold text-white opacity-70">
+                        <div className="absolute top-0 right-0 bottom-0 left-0 z-20 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl text-white opacity-70 [text-shadow:_0.1em_0.1em_0_rgb(0_0_0)]">
                             {gameState.winner ? (
                                 <>
                                     <div className="text-4xl">WINNER!</div>
                                     <div className="text-5xl text-lime-400">{gameState.winner.username}</div>
                                     <button
-                                        className="mt-4 cursor-pointer rounded-sm bg-lime-500 px-8 py-3 text-xl font-extrabold text-white hover:bg-lime-400 active:bg-lime-300"
+                                        className="mt-4 cursor-pointer bg-lime-500 px-8 py-3 text-xl text-white hover:bg-lime-400 active:bg-lime-300"
                                         onClick={startGame}
                                     >
                                         Play Again
@@ -354,13 +355,13 @@ export const CowGame = () => {
                                 </>
                             ) : !gameState.hasStarted ? (
                                 <>
-                                    <div className="mb-4 text-center text-3xl">
+                                    <div className="mb-4 text-center text-4xl">
                                         Waiting for players...
                                         <br />
-                                        <span className="text-lg font-normal">Press Start when ready!</span>
+                                        <span className="text-xl">Press Start when ready!</span>
                                     </div>
                                     <button
-                                        className="mt-4 cursor-pointer rounded-sm bg-lime-500 px-8 py-3 text-xl font-extrabold text-white hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
+                                        className="mt-4 cursor-pointer bg-lime-500 px-8 py-3 text-2xl text-white [text-shadow:_0.1em_0.1em_0_rgb(0_0_0)] hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
                                         onClick={startGame}
                                         disabled={gameState.players.length === 0}
                                     >
@@ -606,8 +607,8 @@ function PowerupLegend() {
             <div className="flex items-center gap-4">
                 <RenderFood food={{ type: 'tuft', pos: { x: 0, y: 0 } }} isInline />
                 <div>
-                    <div className="font-bold text-green-500 uppercase">Tuft</div>
-                    <div className="text-xs">
+                    <div className="text-2xl text-green-500 uppercase">Tuft</div>
+                    <div>
                         <div>Basic food</div>
                         <div>All foods make you longer!</div>
                     </div>
@@ -616,13 +617,13 @@ function PowerupLegend() {
             <div className="flex items-center gap-4">
                 <RenderFood food={{ type: 'honey', pos: { x: 0, y: 0 } }} isInline />
                 <div>
-                    <div className="font-bold text-amber-500 uppercase">Honey</div>
-                    <div className="text-xs">
+                    <div className="text-2xl text-amber-500 uppercase">Honey</div>
+                    <div>
                         <div>
-                            <span className="font-semibold">Use:</span> Slows self
+                            Use: Slows self
                         </div>
                         <div>
-                            <span className="font-semibold">Drop:</span> Slows everyone
+                            Drop: Slows everyone
                         </div>
                     </div>
                 </div>
@@ -630,13 +631,13 @@ function PowerupLegend() {
             <div className="flex items-center gap-4">
                 <RenderFood food={{ type: 'milk', pos: { x: 0, y: 0 } }} isInline />
                 <div>
-                    <div className="font-bold text-blue-400 uppercase">Milk</div>
-                    <div className="text-xs">
+                    <div className="text-2xl text-blue-400 uppercase">Milk</div>
+                    <div>
                         <div>
-                            <span className="font-semibold">Use:</span> Boosts self
+                            Use: Boosts self
                         </div>
                         <div>
-                            <span className="font-semibold">Drop:</span> Boosts everyone
+                            Drop: Boosts everyone
                         </div>
                     </div>
                 </div>
@@ -644,13 +645,13 @@ function PowerupLegend() {
             <div className="flex items-center gap-4">
                 <RenderFood food={{ type: 'bean', pos: { x: 0, y: 0 } }} isInline />
                 <div>
-                    <div className="font-bold text-lime-500 uppercase">Bean</div>
-                    <div className="text-xs">
+                    <div className="text-2xl text-lime-500 uppercase">Bean</div>
+                    <div>
                         <div>
-                            <span className="font-semibold">Use:</span> Trample
+                            Use: Trample
                         </div>
                         <div>
-                            <span className="font-semibold">Drop:</span> Blinding fart cloud
+                            Drop: Blinding fart cloud
                         </div>
                     </div>
                 </div>
