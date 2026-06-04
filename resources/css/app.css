@@ -148,3 +148,11 @@
         @apply bg-background text-foreground;
     }
 }
+
+.text-shadow {
+    text-shadow: 0.1em 0.1em 0 rgb(0 0 0);
+}
+
+.text-shadow-lg {
+    text-shadow: 0.2em 0.2em 0 rgb(0 0 0);
+}

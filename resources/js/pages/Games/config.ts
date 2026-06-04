@@ -1,6 +1,6 @@
 export const config = {
-    rows: 20,
-    cols: 45,
+    rows: 27,
+    cols: 50,
     cellSize: 32,
     tick: 250,
     suddenDeathTick: 150,

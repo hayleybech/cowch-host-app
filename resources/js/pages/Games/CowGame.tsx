@@ -71,7 +71,10 @@ export const CowGame = () => {
                         type: 'CONNECT_PLAYER',
                         payload: {
                             playerId: conn.peer,
-                            username: action.payload.username,
+                            username:
+                                action.payload.username.length > 8
+                                    ? action.payload.username.slice(0, 8)
+                                    : action.payload.username,
                             connection: conn,
                         },
                     });
@@ -139,7 +142,7 @@ export const CowGame = () => {
             movePlayers(gameState, dispatch);
             dispatch({ type: 'SPAWN_FOOD' });
         },
-        gameState.isPaused ? null : (gameState.isSuddenDeath ? config.suddenDeathTick : config.tick),
+        gameState.isPaused ? null : gameState.isSuddenDeath ? config.suddenDeathTick : config.tick,
     );
 
     const togglePause = useCallback(() => {
@@ -151,44 +154,45 @@ export const CowGame = () => {
     }, []);
 
     return (
-        <div className="flex h-screen flex-col bg-neutral-800 text-white [text-shadow:_0.2em_0.2em_0_rgb(0_0_0)]">
-            <header className="mb-6 w-full max-w-[335px] px-4 py-2 text-sm not-has-[nav]:hidden lg:max-w-4xl">
-                <nav className="flex items-center justify-start gap-4">
+        <div className="flex h-screen flex-col bg-neutral-800 text-white text-shadow-lg">
+            <header className="w-full px-4 py-2 text-sm">
+                <div className="relative flex items-center justify-center gap-8">
                     {/*<img src="/cowch-logo.png" alt="Cowch" className="h-8" />*/}
-                    <h1 className="text-5xl text-white italic [text-shadow:_0.1em_0.1em_0_rgb(0_0_0)]">cowch</h1>
-                </nav>
+                    <h1 className="relative bottom-1 text-6xl text-white italic text-shadow">
+                        cowch
+                    </h1>
+
+                    <p className="text-2xl text-gray-300">
+                        Join at <span className="text-4xl text-white">cowch.expo.app</span>
+                    </p>
+
+                    <p className="text-2xl text-gray-300">
+                        Lobby code: <span className="text-4xl text-white">{joinCode}</span>
+                    </p>
+
+                    <p className="absolute right-0 flex gap-4">
+                        {!gameState.hasStarted || gameState.winner ? (
+                            <button
+                                className="cursor-pointer bg-lime-500 px-4 py-2 text-xl text-white text-shadow hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
+                                onClick={startGame}
+                                disabled={gameState.players.length === 0}
+                            >
+                                {gameState.winner ? 'Play Again' : 'Start Game'}
+                            </button>
+                        ) : (
+                            <button
+                                className="cursor-pointer bg-lime-500 px-4 py-2 text-white hover:bg-lime-400 active:bg-lime-300"
+                                onClick={togglePause}
+                            >
+                                {gameState.isPaused ? 'Resume' : 'Pause'}
+                            </button>
+                        )}
+                    </p>
+                </div>
             </header>
 
-            <div className="flex w-full justify-between gap-8">
-                <div className="grow px-4">
-                    <div className="mb-8">
-                        <div className="mb-8 space-y-2">
-                            <p className="text-2xl text-gray-300">
-                                Join at <span className="text-4xl text-white">cowch.expo.app</span>
-                            </p>
-                            <p className="text-2xl text-gray-300">
-                                Lobby code: <span className="text-4xl text-white">{joinCode}</span>
-                            </p>
-                        </div>
-                        <p className="flex gap-4">
-                            {!gameState.hasStarted || gameState.winner ? (
-                                <button
-                                    className="cursor-pointer bg-lime-500 px-4 py-2 text-xl text-white [text-shadow:_0.1em_0.1em_0_rgb(0_0_0)] hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
-                                    onClick={startGame}
-                                    disabled={gameState.players.length === 0}
-                                >
-                                    {gameState.winner ? 'Play Again' : 'Start Game'}
-                                </button>
-                            ) : (
-                                <button
-                                    className="cursor-pointer bg-lime-500 px-4 py-2 text-white hover:bg-lime-400 active:bg-lime-300"
-                                    onClick={togglePause}
-                                >
-                                    {gameState.isPaused ? 'Resume' : 'Pause'}
-                                </button>
-                            )}
-                        </p>
-                    </div>
+            <div className="flex w-full justify-between">
+                <div className="grow px-4 py-4 bg-neutral-700">
                     {/* Scoreboard */}
                     <div>
                         <ul className="flex flex-col gap-4">
@@ -204,7 +208,7 @@ export const CowGame = () => {
                                             {config.isDebugEnabled && isAlive(player) && (
                                                 <button
                                                     className={classNames(
-                                                        'w-fit cursor-pointer px-2 py-0.5 text-sm text-white [text-shadow:_0.1em_0.1em_0_rgb(0_0_0)]',
+                                                        'w-fit cursor-pointer px-2 py-0.5 text-sm text-white text-shadow',
                                                         player.isFrozen
                                                             ? 'bg-blue-600 hover:bg-blue-500'
                                                             : 'bg-blue-400 hover:bg-blue-300',
@@ -336,13 +340,13 @@ export const CowGame = () => {
                         )}
                     </AnimatePresence>
                     {gameState.isPaused && (
-                        <div className="absolute top-0 right-0 bottom-0 left-0 z-20 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl text-white opacity-70 [text-shadow:_0.1em_0.1em_0_rgb(0_0_0)]">
+                        <div className="absolute top-0 right-0 bottom-0 left-0 z-20 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl text-white opacity-70 text-shadow">
                             {gameState.winner ? (
                                 <>
                                     <div className="text-4xl">WINNER!</div>
                                     <div className="text-5xl text-lime-400">{gameState.winner.username}</div>
                                     <button
-                                        className="mt-4 cursor-pointer bg-lime-500 px-8 py-3 text-xl text-white hover:bg-lime-400 active:bg-lime-300"
+                                        className="mt-4 cursor-pointer bg-lime-500 px-8 py-3 text-xl text-white text-shadow hover:bg-lime-400 active:bg-lime-300"
                                         onClick={startGame}
                                     >
                                         Play Again
@@ -361,7 +365,7 @@ export const CowGame = () => {
                                         <span className="text-xl">Press Start when ready!</span>
                                     </div>
                                     <button
-                                        className="mt-4 cursor-pointer bg-lime-500 px-8 py-3 text-2xl text-white [text-shadow:_0.1em_0.1em_0_rgb(0_0_0)] hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
+                                        className="mt-4 cursor-pointer bg-lime-500 px-8 py-3 text-2xl text-white text-shadow hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
                                         onClick={startGame}
                                         disabled={gameState.players.length === 0}
                                     >
@@ -603,7 +607,7 @@ const RenderFood = ({ food, className, isInline = false }: { food: Food; isInlin
 
 function PowerupLegend() {
     return (
-        <div className="mt-4 flex w-full justify-center gap-8 bg-neutral-800 p-4 text-white">
+        <div className="flex w-full justify-center gap-8 bg-neutral-800 p-4 text-white">
             <div className="flex items-center gap-4">
                 <RenderFood food={{ type: 'tuft', pos: { x: 0, y: 0 } }} isInline />
                 <div>
@@ -619,12 +623,8 @@ function PowerupLegend() {
                 <div>
                     <div className="text-2xl text-amber-500 uppercase">Honey</div>
                     <div>
-                        <div>
-                            Use: Slows self
-                        </div>
-                        <div>
-                            Drop: Slows everyone
-                        </div>
+                        <div>Use: Slows self</div>
+                        <div>Drop: Slows everyone</div>
                     </div>
                 </div>
             </div>
@@ -633,12 +633,8 @@ function PowerupLegend() {
                 <div>
                     <div className="text-2xl text-blue-400 uppercase">Milk</div>
                     <div>
-                        <div>
-                            Use: Boosts self
-                        </div>
-                        <div>
-                            Drop: Boosts everyone
-                        </div>
+                        <div>Use: Boosts self</div>
+                        <div>Drop: Boosts everyone</div>
                     </div>
                 </div>
             </div>
@@ -647,12 +643,8 @@ function PowerupLegend() {
                 <div>
                     <div className="text-2xl text-lime-500 uppercase">Bean</div>
                     <div>
-                        <div>
-                            Use: Trample
-                        </div>
-                        <div>
-                            Drop: Blinding fart cloud
-                        </div>
+                        <div>Use: Trample</div>
+                        <div>Drop: Blinding fart cloud</div>
                     </div>
                 </div>
             </div>
