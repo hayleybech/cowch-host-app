@@ -1,16 +1,15 @@
 import { generateRandomString, getRandomElement } from '@/lib/utils';
-import {
-    getRotationFromSurroundingPieces,
-    isAlive,
-    isCowInHoneyPatch,
-    isCowInMilkPatch,
-    shouldUseStraightPiece,
-} from '@/pages/Games/cow';
+import { isAlive } from '@/pages/Games/cow';
 import { movePlayers, reducer } from '@/pages/Games/game';
-import { CowBreed, CowPiece, Food, PlayerAction } from '@/pages/Games/types';
+import { RenderCowPiece } from '@/pages/Games/render/RenderCow';
+import { RenderFood } from '@/pages/Games/render/RenderFood';
+import { RenderCloud, RenderHoneyPatch, RenderMilkPatch } from '@/pages/Games/render/RenderPatch';
+import { PlayerAction } from '@/pages/Games/types';
+import { Button } from '@/pages/Games/ui/Button';
+import { PowerupLegend } from '@/pages/Games/ui/PowerupLegend';
+import { Scoreboard } from '@/pages/Games/ui/Scoreboard';
 import classNames from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Snail, Zap } from 'lucide-react';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
@@ -158,9 +157,7 @@ export const CowGame = () => {
             <header className="w-full px-4 py-2 text-sm">
                 <div className="relative flex items-center justify-center gap-8">
                     {/*<img src="/cowch-logo.png" alt="Cowch" className="h-8" />*/}
-                    <h1 className="relative bottom-1 text-6xl text-white italic text-shadow">
-                        cowch
-                    </h1>
+                    <h1 className="text-shadow relative bottom-1 text-6xl text-white italic">cowch</h1>
 
                     <p className="text-2xl text-gray-300">
                         Join at <span className="text-4xl text-white">cowch.expo.app</span>
@@ -172,99 +169,24 @@ export const CowGame = () => {
 
                     <p className="absolute right-0 flex gap-4">
                         {!gameState.hasStarted || gameState.winner ? (
-                            <button
-                                className="cursor-pointer bg-lime-500 px-4 py-2 text-xl text-white text-shadow hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
-                                onClick={startGame}
-                                disabled={gameState.players.length === 0}
-                            >
+                            <Button onClick={startGame} disabled={gameState.players.length === 0}>
                                 {gameState.winner ? 'Play Again' : 'Start Game'}
-                            </button>
+                            </Button>
                         ) : (
-                            <button
-                                className="cursor-pointer bg-lime-500 px-4 py-2 text-white hover:bg-lime-400 active:bg-lime-300"
-                                onClick={togglePause}
-                            >
-                                {gameState.isPaused ? 'Resume' : 'Pause'}
-                            </button>
+                            <Button onClick={togglePause}>{gameState.isPaused ? 'Resume' : 'Pause'}</Button>
                         )}
                     </p>
                 </div>
             </header>
 
             <div className="flex w-full justify-between">
-                <div className="grow px-4 py-4 bg-neutral-700">
-                    {/* Scoreboard */}
-                    <div>
-                        <ul className="flex flex-col gap-4">
-                            {gameState.players.map((player) => (
-                                <li key={player.id} className="flex justify-between gap-8">
-                                    <div className="flex gap-2">
-                                        <CowAvatar breed={player.breed} />
-
-                                        <div className="flex flex-col">
-                                            <div className="text-xl">
-                                                {player.username} {!player.isAlive && '(Dead)'}
-                                            </div>
-                                            {config.isDebugEnabled && isAlive(player) && (
-                                                <button
-                                                    className={classNames(
-                                                        'w-fit cursor-pointer px-2 py-0.5 text-sm text-white text-shadow',
-                                                        player.isFrozen
-                                                            ? 'bg-blue-600 hover:bg-blue-500'
-                                                            : 'bg-blue-400 hover:bg-blue-300',
-                                                    )}
-                                                    onClick={() =>
-                                                        dispatch({
-                                                            type: 'TOGGLE_FREEZE_PLAYER',
-                                                            payload: { playerId: player.id },
-                                                        })
-                                                    }
-                                                >
-                                                    {player.isFrozen ? 'Unfreeze' : 'Freeze'}
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        <div
-                                            className="flex items-center justify-center"
-                                            style={{ width: config.cellSize, height: config.cellSize }}
-                                        >
-                                            {isAlive(player) && player.storedPowerup && (
-                                                <RenderFood food={player.storedPowerup} isInline />
-                                            )}
-                                        </div>
-                                        {isAlive(player) &&
-                                            (player.slowedTicks > 0 ||
-                                                gameState.honeyPatches.some((patch) =>
-                                                    isCowInHoneyPatch(
-                                                        player.headPiece,
-                                                        patch.pos,
-                                                        config.honeyPatchRadius,
-                                                    ),
-                                                )) && (
-                                                <div className="flex items-center justify-center p-1">
-                                                    <Snail className="h-6 w-6 text-amber-600" />
-                                                </div>
-                                            )}
-                                        {isAlive(player) &&
-                                            (player.boostedTicks > 0 ||
-                                                gameState.milkPatches.some((patch) =>
-                                                    isCowInMilkPatch(
-                                                        player.headPiece,
-                                                        patch.pos,
-                                                        config.milkPatchRadius,
-                                                    ),
-                                                )) && (
-                                                <div className="flex items-center justify-center p-1">
-                                                    <Zap className="h-6 w-6 text-blue-500" />
-                                                </div>
-                                            )}
-                                    </div>
-                                    <div className="text-xl">{player.score}</div>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                <div className="grow bg-neutral-700 px-4 py-4">
+                    <Scoreboard
+                        players={gameState.players}
+                        honeyPatches={gameState.honeyPatches}
+                        milkPatches={gameState.milkPatches}
+                        dispatch={dispatch}
+                    />
                 </div>
 
                 {/* Grid */}
@@ -340,41 +262,42 @@ export const CowGame = () => {
                         )}
                     </AnimatePresence>
                     {gameState.isPaused && (
-                        <div className="absolute top-0 right-0 bottom-0 left-0 z-20 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-2xl text-white opacity-70 text-shadow">
-                            {gameState.winner ? (
-                                <>
-                                    <div className="text-4xl">WINNER!</div>
-                                    <div className="text-5xl text-lime-400">{gameState.winner.username}</div>
-                                    <button
-                                        className="mt-4 cursor-pointer bg-lime-500 px-8 py-3 text-xl text-white text-shadow hover:bg-lime-400 active:bg-lime-300"
-                                        onClick={startGame}
-                                    >
-                                        Play Again
-                                    </button>
-                                </>
-                            ) : gameState.resumeGracePeriodSeconds > 0 ? (
-                                <>
-                                    <div>{gameState.hasStarted ? 'RESUMING' : 'STARTING'}</div>
-                                    <div className="text-3xl">{gameState.resumeGracePeriodSeconds}</div>
-                                </>
-                            ) : !gameState.hasStarted ? (
-                                <>
-                                    <div className="mb-4 text-center text-4xl">
-                                        Waiting for players...
-                                        <br />
-                                        <span className="text-xl">Press Start when ready!</span>
-                                    </div>
-                                    <button
-                                        className="mt-4 cursor-pointer bg-lime-500 px-8 py-3 text-2xl text-white text-shadow hover:bg-lime-400 active:bg-lime-300 disabled:cursor-not-allowed disabled:bg-neutral-500"
-                                        onClick={startGame}
-                                        disabled={gameState.players.length === 0}
-                                    >
-                                        Start Game
-                                    </button>
-                                </>
-                            ) : (
-                                'PAUSED'
-                            )}
+                        <div className="text-shadow absolute top-0 right-0 bottom-0 left-0 z-20 flex flex-col items-center justify-center">
+                            <div className="absolute top-0 right-0 bottom-0 left-0 bg-neutral-900 opacity-70" />
+                            <div className="text-shadow z-15 flex flex-col items-center justify-center gap-2 text-2xl text-white">
+                                {gameState.winner ? (
+                                    <>
+                                        <div className="text-4xl">WINNER!</div>
+                                        <div className="text-5xl text-lime-400">{gameState.winner.username}</div>
+                                        <Button size="lg" className="mt-4" onClick={startGame}>
+                                            Play Again
+                                        </Button>
+                                    </>
+                                ) : gameState.resumeGracePeriodSeconds > 0 ? (
+                                    <>
+                                        <div>{gameState.hasStarted ? 'RESUMING' : 'STARTING'}</div>
+                                        <div className="text-3xl">{gameState.resumeGracePeriodSeconds}</div>
+                                    </>
+                                ) : !gameState.hasStarted ? (
+                                    <>
+                                        <div className="mb-4 text-center text-4xl">
+                                            Waiting for players...
+                                            <br />
+                                            <span className="text-xl">Press Start when ready!</span>
+                                        </div>
+                                        <Button
+                                            size="lg"
+                                            className="mt-4"
+                                            onClick={startGame}
+                                            disabled={gameState.players.length === 0}
+                                        >
+                                            Start Game
+                                        </Button>
+                                    </>
+                                ) : (
+                                    'PAUSED'
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -385,269 +308,3 @@ export const CowGame = () => {
 };
 
 export default CowGame;
-
-const CowAvatar = (props: { breed: CowBreed }) => (
-    <div
-        style={{
-            height: config.cellSize,
-            width: config.cellSize * 2,
-            backgroundImage: "url('/sprite.png')",
-            backgroundSize: spriteBgSize,
-            backgroundPosition: getSpriteBgPos(sprites.cow[props.breed].sideView),
-        }}
-    >
-        &nbsp;
-    </div>
-);
-
-const RenderCloud = ({ cloud }: { cloud: { pos: { x: number; y: number } } }) => {
-    const size = config.cellSize * config.cloudRadius * 2;
-    const offset = (size - config.cellSize) / 2;
-
-    return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 2.0 } }}
-            className="absolute rounded-full bg-stone-500"
-            style={{
-                height: size,
-                width: size,
-                top: cloud.pos.y * config.cellSize - offset,
-                left: cloud.pos.x * config.cellSize - offset,
-                filter: 'blur(16px)',
-                zIndex: 10,
-            }}
-            transition={{
-                duration: 2.0,
-                ease: 'easeOut',
-                opacity: { duration: 0.5 },
-            }}
-        />
-    );
-};
-
-const RenderHoneyPatch = ({ patch }: { patch: { pos: { x: number; y: number } } }) => {
-    const size = config.cellSize * config.honeyPatchRadius * 2;
-    const offset = (size - config.cellSize) / 2;
-
-    return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.8 }}
-            exit={{ opacity: 0, transition: { duration: 2.0 } }}
-            className="absolute rounded-full bg-amber-500"
-            style={{
-                height: size,
-                width: size,
-                top: patch.pos.y * config.cellSize - offset,
-                left: patch.pos.x * config.cellSize - offset,
-                filter: 'blur(16px)',
-                zIndex: 3,
-            }}
-            transition={{
-                duration: 2.0,
-                ease: 'easeOut',
-                opacity: { duration: 0.5 },
-            }}
-        />
-    );
-};
-
-const RenderMilkPatch = ({ patch }: { patch: { pos: { x: number; y: number } } }) => {
-    const size = config.cellSize * config.milkPatchRadius * 2;
-    const offset = (size - config.cellSize) / 2;
-
-    return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.8 }}
-            exit={{ opacity: 0, transition: { duration: 2.0 } }}
-            className="absolute rounded-full bg-slate-200"
-            style={{
-                height: size,
-                width: size,
-                top: patch.pos.y * config.cellSize - offset,
-                left: patch.pos.x * config.cellSize - offset,
-                filter: 'blur(16px)',
-                zIndex: 3,
-            }}
-            transition={{
-                duration: 2.0,
-                ease: 'easeOut',
-                opacity: { duration: 0.5 },
-            }}
-        />
-    );
-};
-
-const RenderCowPiece = (props: { piece: CowPiece; colour: CowBreed; prevPiece: CowPiece }) => {
-    return (
-        <>
-            {props.piece.type === 'head' && (
-                <div
-                    className={classNames(
-                        'absolute flex items-center justify-center text-white',
-                        props.piece.dir === 'down' && 'rotate-90',
-                        props.piece.dir === 'up' && '-rotate-90',
-                        props.piece.dir === 'left' && 'rotate-180',
-                    )}
-                    style={{
-                        height: config.cellSize,
-                        width: config.cellSize,
-                        top: props.piece.pos.y * config.cellSize,
-                        left: props.piece.pos.x * config.cellSize,
-                        backgroundImage: "url('/sprite.png')",
-                        backgroundSize: spriteBgSize,
-                        backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].head),
-                        zIndex: 5,
-                    }}
-                >
-                    &nbsp;
-                </div>
-            )}
-            {props.piece.type === 'middle' && (
-                <>
-                    {shouldUseStraightPiece(props.piece, props.prevPiece, props.piece.nextPiece) ? (
-                        // if prev and next piece facing same direction, render straight
-                        <div
-                            className={classNames(
-                                'absolute flex items-center justify-center text-black',
-                                props.piece.dir === 'down' && 'rotate-90',
-                                props.piece.dir === 'up' && '-rotate-90',
-                                props.piece.dir === 'left' && 'rotate-180',
-                            )}
-                            style={{
-                                height: config.cellSize,
-                                width: config.cellSize,
-                                top: props.piece.pos.y * config.cellSize,
-                                left: props.piece.pos.x * config.cellSize,
-                                backgroundImage: "url('/sprite.png')",
-                                backgroundSize: spriteBgSize,
-                                backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].middle),
-                                zIndex: 5,
-                            }}
-                        >
-                            &nbsp;
-                        </div>
-                    ) : (
-                        <div
-                            className={classNames(
-                                'absolute flex items-center justify-center text-black',
-                                getRotationFromSurroundingPieces(props.piece, props.prevPiece, props.piece.nextPiece),
-                            )}
-                            style={{
-                                height: config.cellSize,
-                                width: config.cellSize,
-                                top: props.piece.pos.y * config.cellSize,
-                                left: props.piece.pos.x * config.cellSize,
-                                backgroundImage: "url('/sprite.png')",
-                                backgroundSize: spriteBgSize,
-                                backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].bend),
-                                zIndex: 5,
-                            }}
-                        >
-                            &nbsp;
-                        </div>
-                    )}
-                </>
-            )}
-
-            {!!props.piece.nextPiece && (
-                <RenderCowPiece piece={props.piece.nextPiece} colour={props.colour} prevPiece={props.piece} />
-            )}
-            {props.piece.type === 'tail' && (
-                <div
-                    className={classNames(
-                        'absolute flex items-center justify-center text-white',
-                        props.piece.dir === 'down' && 'rotate-90',
-                        props.piece.dir === 'up' && '-rotate-90',
-                        props.piece.dir === 'left' && 'rotate-180',
-                    )}
-                    style={{
-                        height: config.cellSize,
-                        width: config.cellSize,
-                        top: props.piece.pos.y * config.cellSize,
-                        left: props.piece.pos.x * config.cellSize,
-                        backgroundImage: "url('/sprite.png')",
-                        backgroundSize: spriteBgSize,
-                        backgroundPosition: getSpriteBgPos(sprites.cow[props.colour].tail),
-                        zIndex: 5,
-                    }}
-                >
-                    &nbsp;
-                </div>
-            )}
-        </>
-    );
-};
-
-const RenderFood = ({ food, className, isInline = false }: { food: Food; isInline?: boolean; className?: string }) => {
-    return (
-        <div
-            className={classNames(className, !isInline && 'absolute flex items-center justify-center text-white')}
-            style={{
-                height: config.cellSize,
-                width: config.cellSize,
-                ...(isInline
-                    ? {}
-                    : {
-                          top: food.pos.y * config.cellSize,
-                          left: food.pos.x * config.cellSize,
-                      }),
-                backgroundImage: "url('/sprite.png')",
-                backgroundSize: spriteBgSize,
-                backgroundPosition: getSpriteBgPos(sprites.food[food.type]),
-            }}
-        >
-            &nbsp;
-        </div>
-    );
-};
-
-function PowerupLegend() {
-    return (
-        <div className="flex w-full justify-center gap-8 bg-neutral-800 p-4 text-white">
-            <div className="flex items-center gap-4">
-                <RenderFood food={{ type: 'tuft', pos: { x: 0, y: 0 } }} isInline />
-                <div>
-                    <div className="text-2xl text-green-500 uppercase">Tuft</div>
-                    <div>
-                        <div>Basic food</div>
-                        <div>All foods make you longer!</div>
-                    </div>
-                </div>
-            </div>
-            <div className="flex items-center gap-4">
-                <RenderFood food={{ type: 'honey', pos: { x: 0, y: 0 } }} isInline />
-                <div>
-                    <div className="text-2xl text-amber-500 uppercase">Honey</div>
-                    <div>
-                        <div>Use: Slows self</div>
-                        <div>Drop: Slows everyone</div>
-                    </div>
-                </div>
-            </div>
-            <div className="flex items-center gap-4">
-                <RenderFood food={{ type: 'milk', pos: { x: 0, y: 0 } }} isInline />
-                <div>
-                    <div className="text-2xl text-blue-400 uppercase">Milk</div>
-                    <div>
-                        <div>Use: Boosts self</div>
-                        <div>Drop: Boosts everyone</div>
-                    </div>
-                </div>
-            </div>
-            <div className="flex items-center gap-4">
-                <RenderFood food={{ type: 'bean', pos: { x: 0, y: 0 } }} isInline />
-                <div>
-                    <div className="text-2xl text-lime-500 uppercase">Bean</div>
-                    <div>
-                        <div>Use: Trample</div>
-                        <div>Drop: Blinding fart cloud</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
