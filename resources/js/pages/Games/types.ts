@@ -101,10 +101,9 @@ export type GameNotification =
     | { type: 'started' }
     | { type: 'powerup_stored' }
     | { type: 'powerup_used' }
-    | { type: 'joined' }
+    | { type: 'joined'; payload: { breed: CowBreed } }
     | { type: 'game_over'; payload: { winner: string | null } }
-    | { type: 'player_joined'; payload: CowBreed[] }
-    | { type: 'changed_direction'; payload: Direction };
+    | { type: 'player_joined'; payload: CowBreed[] };
 
 export type GameAction =
     | {

@@ -70,10 +70,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
             return state;
         }
 
-        broadcastTo(state.connections, pending.id, { type: 'joined' });
         broadcastTo(state.connections, pending.id, {
-            type: 'changed_direction',
-            payload: initialDirection,
+            type: 'joined',
+            payload: { breed: action.payload.breed }
         });
 
         const startXy = findAvailablePosition(state);
@@ -152,10 +151,6 @@ export function reducer(state: GameState, action: GameAction): GameState {
         }
 
         player.headPiece.dir = requestedDir;
-        broadcastTo(state.connections, player.id, {
-            type: 'changed_direction',
-            payload: requestedDir,
-        });
 
         return {
             ...state,
@@ -234,11 +229,6 @@ export function reducer(state: GameState, action: GameAction): GameState {
                 dir: initialDirection,
                 nextPiece: cowMiddle,
             };
-
-            broadcastTo(state.connections, p.id, {
-                type: 'changed_direction',
-                payload: initialDirection,
-            });
 
             return {
                 ...p,
