@@ -233,18 +233,12 @@ export const CowGame = () => {
                         {gameState.clouds.map((cloud, index) => (
                             <RenderCloud cloud={cloud} key={`cloud-${index}`} />
                         ))}
-                    </AnimatePresence>
-                    <AnimatePresence>
                         {gameState.honeyPatches.map((patch, index) => (
                             <RenderHoneyPatch patch={patch} key={`honey-${index}`} />
                         ))}
-                    </AnimatePresence>
-                    <AnimatePresence>
                         {gameState.milkPatches.map((patch, index) => (
                             <RenderMilkPatch patch={patch} key={`milk-${index}`} />
                         ))}
-                    </AnimatePresence>
-                    <AnimatePresence>
                         {gameState.isSuddenDeath && !gameState.winner && (
                             <motion.div
                                 key="sudden-death-toast"
