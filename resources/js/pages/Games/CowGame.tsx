@@ -63,13 +63,15 @@ export const CowGame = () => {
         });
 
         peer.on('connection', function (conn: DataConnection) {
+            const uuid = crypto.randomUUID();
+
             conn.on('data', function (data: unknown) {
                 const action = data as PlayerAction;
                 if (action.type === 'connect') {
                     dispatch({
                         type: 'CONNECT_PLAYER',
                         payload: {
-                            playerId: conn.peer,
+                            uuid,
                             username:
                                 action.payload.username.length > 8
                                     ? action.payload.username.slice(0, 8)
@@ -83,7 +85,7 @@ export const CowGame = () => {
                     dispatch({
                         type: 'JOIN_PLAYER',
                         payload: {
-                            playerId: conn.peer,
+                            uuid,
                             breed: action.payload.breed,
                         },
                     });
@@ -91,25 +93,25 @@ export const CowGame = () => {
                 if (action.type === 'move') {
                     dispatch({
                         type: 'CHANGE_DIRECTION',
-                        payload: { playerId: conn.peer, direction: action.payload },
+                        payload: { uuid, direction: action.payload },
                     });
                 }
                 if (action.type === 'drop_powerup') {
                     dispatch({
                         type: 'DROP_TRAP',
-                        payload: { playerId: conn.peer },
+                        payload: { uuid },
                     });
                 }
                 if (action.type === 'use_powerup') {
                     dispatch({
                         type: 'APPLY_POWERUP',
-                        payload: { playerId: conn.peer },
+                        payload: { uuid },
                     });
                 }
                 if (action.type === 'pause') {
                     dispatch({
                         type: 'REQUEST_TOGGLE_PAUSE',
-                        payload: { playerId: conn.peer },
+                        payload: { uuid },
                     });
                 }
                 if (action.type === 'start_game') {
@@ -219,7 +221,7 @@ export const CowGame = () => {
                         (player) =>
                             isAlive(player) && (
                                 <RenderCowPiece
-                                    key={player.id}
+                                    key={player.uuid}
                                     piece={player.headPiece}
                                     colour={player.breed}
                                     prevPiece={player.headPiece}

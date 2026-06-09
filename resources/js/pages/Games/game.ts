@@ -35,11 +35,15 @@ import { Dispatch } from 'react';
 
 export function reducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'CONNECT_PLAYER') {
+        const existingPlayer = state.players.find((p) => p.uuid === action.payload.uuid);
+        const uuid = existingPlayer ? existingPlayer.uuid : action.payload.uuid;
+
         const nextConnections = [...state.connections, action.payload.connection];
         const nextPending = [
             ...state.pendingConnections,
             {
-                id: action.payload.playerId,
+                uuid: uuid,
+                peerId: action.payload.connection.peer,
                 username: action.payload.username,
                 connection: action.payload.connection,
             },
@@ -48,6 +52,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         const chosenBreeds = state.players.map((p) => p.breed);
         const availableBreeds = CowBreeds.filter((breed) => !chosenBreeds.includes(breed));
 
+        action.payload.connection.send({ type: 'connected', payload: uuid });
         action.payload.connection.send({ type: 'player_joined', payload: availableBreeds });
         action.payload.connection.send({ type: state.isPaused ? 'paused' : 'resumed' });
 
@@ -60,7 +65,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
 
     if (action.type === 'JOIN_PLAYER') {
         const initialDirection = 'right';
-        const pending = state.pendingConnections.find((p) => p.id === action.payload.playerId);
+        const pending = state.pendingConnections.find((p) => p.uuid === action.payload.uuid);
         if (!pending) {
             return state;
         }
@@ -70,10 +75,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
             return state;
         }
 
-        broadcastTo(state.connections, pending.id, {
-            type: 'joined',
-            payload: { breed: action.payload.breed }
-        });
+        broadcastTo(state, pending.uuid, { type: 'joined', payload: { breed: action.payload.breed } });
 
         const startXy = findAvailablePosition(state);
 
@@ -102,7 +104,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
             nextPiece: cowMiddle,
         };
         const player: Player = {
-            id: pending.id,
+            uuid: pending.uuid,
+            peerId: pending.peerId,
             username: pending.username,
             headPiece: head,
             score: 0,
@@ -114,7 +117,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         };
 
         const nextPlayers = [...state.players, player];
-        const nextPending = state.pendingConnections.filter((p) => p.id !== action.payload.playerId);
+        const nextPending = state.pendingConnections.filter((p) => p.uuid !== action.payload.uuid);
 
         const chosenBreeds = nextPlayers.map((p) => p.breed);
         const availableBreeds = CowBreeds.filter((breed) => !chosenBreeds.includes(breed));
@@ -132,7 +135,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'CHANGE_DIRECTION') {
-        const player = state.players.find((player) => player.id == action.payload.playerId);
+        const player = state.players.find((player) => player.uuid == action.payload.uuid);
         if (!player || !isAlive(player)) {
             return state;
         }
@@ -257,8 +260,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'REQUEST_TOGGLE_PAUSE') {
-        if (action.payload?.playerId) {
-            const player = state.players.find((p) => p.id === action.payload!.playerId);
+        if (action.payload?.uuid) {
+            const player = state.players.find((p) => p.uuid === action.payload!.uuid);
             if (player && !player.isAlive) {
                 return state;
             }
@@ -299,16 +302,16 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'DROP_TRAP') {
-        const playerIdx = state.players.findIndex((p) => p.id === action.payload.playerId);
-        const player = state.players[playerIdx];
+        const playerIndex = state.players.findIndex((p) => p.uuid === action.payload.uuid);
+        const player = state.players[playerIndex];
         if (!player || !isAlive(player)) {
             return state;
         }
 
         const tail = getTail(player.headPiece);
         const updatedPlayers = [...state.players];
-        updatedPlayers[playerIdx] = { ...player, storedPowerup: null };
-        broadcastTo(state.connections, player.id, { type: 'powerup_used' });
+        updatedPlayers[playerIndex] = { ...player, storedPowerup: null };
+        broadcastTo(state, player.uuid, { type: 'powerup_used' });
 
         if (player.storedPowerup && player.storedPowerup.type === 'bean') {
             const newCloud = {
@@ -352,8 +355,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'APPLY_POWERUP') {
-        const playerIdx = state.players.findIndex((p) => p.id === action.payload.playerId);
-        const player = state.players[playerIdx];
+        const playerIndex = state.players.findIndex((p) => p.uuid === action.payload.uuid);
+        const player = state.players[playerIndex];
 
         if (!player || !isAlive(player) || !player.storedPowerup) {
             return state;
@@ -362,8 +365,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
         const food = player.storedPowerup;
         const updatedPlayers = [...state.players];
         const updatedPlayer = { ...player, storedPowerup: null };
-        updatedPlayers[playerIdx] = updatedPlayer;
-        broadcastTo(state.connections, player.id, { type: 'powerup_used' });
+        updatedPlayers[playerIndex] = updatedPlayer;
+        broadcastTo(state, player.uuid, { type: 'powerup_used' });
 
         if (food.type === 'honey') {
             updatedPlayer.boostedTicks = 0;
@@ -378,7 +381,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         let updatedFood = [...state.food];
         if (food.type === 'bean') {
             updatedPlayer.headPiece = dash(updatedPlayer.headPiece, config.dashDistance);
-            killRammedOpponents(updatedPlayer as AlivePlayer, updatedPlayers, state.connections);
+            killRammedOpponents(updatedPlayer as AlivePlayer, updatedPlayers, state);
             updatedFood = removeTrampledFood(updatedPlayer as AlivePlayer, state.food);
         }
 
@@ -390,15 +393,15 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
 
     if (action.type === 'TOGGLE_FREEZE_PLAYER') {
-        const playerIdx = state.players.findIndex((p) => p.id === action.payload.playerId);
-        const player = state.players[playerIdx];
+        const playerIndex = state.players.findIndex((p) => p.uuid === action.payload.uuid);
+        const player = state.players[playerIndex];
 
         if (!player || !isAlive(player)) {
             return state;
         }
 
         const updatedPlayers = [...state.players];
-        updatedPlayers[playerIdx] = { ...player, isFrozen: !player.isFrozen };
+        updatedPlayers[playerIndex] = { ...player, isFrozen: !player.isFrozen };
         return {
             ...state,
             players: updatedPlayers,
@@ -442,12 +445,12 @@ export function reducer(state: GameState, action: GameAction): GameState {
 const killRammedOpponents = (
     player: AlivePlayer,
     updatedPlayers: Player[],
-    connections: DataConnection[]
+    state: GameState
 ) => {
     // Check for collisions after teleporting
     // Kill other players that collide with any part of this cow
     updatedPlayers.forEach((otherPlayer, idx) => {
-        if (otherPlayer.id === player.id || !isAlive(otherPlayer)) {
+        if (otherPlayer.uuid === player.uuid || !isAlive(otherPlayer)) {
             return;
         }
 
@@ -471,7 +474,7 @@ const killRammedOpponents = (
                     ...otherPlayer,
                     isAlive: false,
                 } as Player;
-                broadcastTo(connections, otherPlayer.id, { type: 'died' });
+                broadcastTo(state, otherPlayer.uuid, { type: 'died' });
             } else {
                 // Cut their tail off at the point of impact
                 // Find the piece before the hit piece and make it the new tail
@@ -494,7 +497,7 @@ const killRammedOpponents = (
                         ...otherPlayer,
                         isAlive: false,
                     } as Player;
-                    broadcastTo(connections, otherPlayer.id, { type: 'died' });
+                    broadcastTo(state, otherPlayer.uuid, { type: 'died' });
                 }
             }
         }
@@ -568,8 +571,10 @@ const broadcastToAll = (connections: DataConnection[], action: GameNotification)
     });
 };
 
-const broadcastTo = (connections: DataConnection[], peerId: string, action: GameNotification) => {
-    connections.find((conn) => conn.peer === peerId)?.send(action);
+const broadcastTo = (state: GameState, uuid: string, action: GameNotification) => {
+    const player = state.players.find((p) => p.uuid === uuid);
+    const peerId = player?.peerId || state.pendingConnections.find((p) => p.uuid === uuid)?.peerId;
+    state.connections.find((conn) => conn.peer === peerId)?.send(action);
 };
 
 export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
@@ -644,7 +649,7 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
             dispatch({ type: 'REMOVE_FOOD', payload: { x: foodCollided.pos.x, y: foodCollided.pos.y } });
 
             // Grow tail
-            const playerOld = state.players.find((playerA) => playerA.id === player.id) as AlivePlayer;
+            const playerOld = state.players.find((playerA) => playerA.uuid === player.uuid) as AlivePlayer;
             grow(player, playerOld);
 
             if (foodCollided.type === 'tuft') {
@@ -654,7 +659,7 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
 
             // Store powerup for later
             player.storedPowerup = foodCollided;
-            broadcastTo(state.connections, player.id, { type: 'powerup_stored' });
+            broadcastTo(state, player.uuid, { type: 'powerup_stored' });
         }
         return player;
     });
@@ -666,7 +671,7 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
         }
 
         if (playerHasHeadbuttedAnyPlayer(player, players) || playerHasCollidedWithAnyWall(player)) {
-            broadcastTo(state.connections, player.id, { type: 'died' });
+            broadcastTo(state, player.uuid, { type: 'died' });
             return {
                 ...player,
                 isAlive: false,

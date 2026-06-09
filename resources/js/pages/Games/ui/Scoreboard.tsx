@@ -25,7 +25,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
         <div>
             <ul className="flex flex-col gap-4">
                 {players.map((player) => (
-                    <li key={player.id} className="flex justify-between gap-8">
+                    <li key={player.uuid} className="flex justify-between gap-8">
                         <div className="flex gap-2">
                             <CowAvatar breed={player.breed} />
 
@@ -44,7 +44,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
                                         onClick={() =>
                                             dispatch({
                                                 type: 'TOGGLE_FREEZE_PLAYER',
-                                                payload: { playerId: player.id },
+                                                payload: { uuid: player.uuid },
                                             })
                                         }
                                     >

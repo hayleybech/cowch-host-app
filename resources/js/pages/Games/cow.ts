@@ -93,7 +93,7 @@ export function playerHasHeadbuttedPlayer(playerA: AlivePlayer, playerB: Player)
         const hitPiece = getHitPiece(currentA.pos, playerB.headPiece);
         if (hitPiece) {
             // Self-collision check
-            if (playerA.id === playerB.id) {
+            if (playerA.uuid === playerB.uuid) {
                 if (currentA !== hitPiece) {
                     return true;
                 }

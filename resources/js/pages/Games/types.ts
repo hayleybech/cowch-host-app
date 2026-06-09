@@ -67,7 +67,8 @@ export type GameState = {
 };
 
 export type PendingConnection = {
-    id: string;
+    uuid: string;
+    peerId: string;
     username: string;
     connection: DataConnection;
 };
@@ -102,33 +103,35 @@ export type GameNotification =
     | { type: 'powerup_stored' }
     | { type: 'powerup_used' }
     | { type: 'joined'; payload: { breed: CowBreed } }
+    | { type: 'connected'; payload: string } // UUID
     | { type: 'game_over'; payload: { winner: string | null } }
     | { type: 'player_joined'; payload: CowBreed[] };
 
 export type GameAction =
     | {
           type: 'CONNECT_PLAYER';
-          payload: { playerId: string; username: string; connection: DataConnection };
+          payload: { uuid: string; username: string; connection: DataConnection };
       }
     | {
           type: 'JOIN_PLAYER';
-          payload: { playerId: string; breed: CowBreed };
+          payload: { uuid: string; breed: CowBreed };
       }
-    | { type: 'CHANGE_DIRECTION'; payload: { playerId: string; direction: Direction } }
+    | { type: 'CHANGE_DIRECTION'; payload: { uuid: string; direction: Direction } }
     | { type: 'UPDATE_PLAYERS'; payload: Player[] }
     | { type: 'SPAWN_FOOD' }
     | { type: 'REMOVE_FOOD'; payload: Position }
-    | { type: 'REQUEST_TOGGLE_PAUSE'; payload?: { playerId: string } }
+    | { type: 'REQUEST_TOGGLE_PAUSE'; payload?: { uuid: string } }
     | { type: 'TICK_RESUME_COUNTDOWN' }
-    | { type: 'DROP_TRAP'; payload: { playerId: string } }
-    | { type: 'APPLY_POWERUP'; payload: { playerId: string } }
-    | { type: 'TOGGLE_FREEZE_PLAYER'; payload: { playerId: string } }
+    | { type: 'DROP_TRAP'; payload: { uuid: string } }
+    | { type: 'APPLY_POWERUP'; payload: { uuid: string } }
+    | { type: 'TOGGLE_FREEZE_PLAYER'; payload: { uuid: string } }
     | { type: 'START_GAME' }
     | { type: 'REQUEST_START_GAME' }
     | { type: 'TICK' };
 
 export type AlivePlayer = {
-    id: string;
+    uuid: string;
+    peerId: string;
     username: string;
     score: number;
     isAlive: true;
@@ -140,7 +143,8 @@ export type AlivePlayer = {
     isFrozen?: boolean;
 };
 export type DeadPlayer = {
-    id: string;
+    uuid: string;
+    peerId: string;
     username: string;
     score: number;
     isAlive: false;
