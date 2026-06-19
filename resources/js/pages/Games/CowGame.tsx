@@ -171,6 +171,8 @@ export const CowGame = () => {
         dispatch({ type: 'REQUEST_START_GAME' });
     }, []);
 
+    const canStartGame = gameState.players.length > 0 && gameState.players.every((p) => p.breed !== null);
+
     return (
         <div className="flex h-screen flex-col bg-neutral-800 text-white text-shadow-lg">
             <header className="w-full px-4 py-2 text-sm">
@@ -188,7 +190,7 @@ export const CowGame = () => {
 
                     <p className="absolute right-0 flex gap-4">
                         {!gameState.hasStarted || gameState.winner ? (
-                            <Button onClick={startGame} disabled={gameState.players.length === 0}>
+                            <Button onClick={startGame} disabled={!canStartGame}>
                                 {gameState.winner ? 'Play Again' : 'Start Game'}
                             </Button>
                         ) : (
@@ -271,16 +273,13 @@ export const CowGame = () => {
                                 ) : !gameState.hasStarted ? (
                                     <>
                                         <div className="mb-4 text-center text-4xl">
-                                            Waiting for players...
-                                            <br />
-                                            <span className="text-xl">Press Start when ready!</span>
+                                            {gameState.players.length === 0
+                                                ? 'Waiting for players...'
+                                                : !canStartGame
+                                                  ? 'Waiting for players...'
+                                                  : 'All players ready!'}
                                         </div>
-                                        <Button
-                                            size="lg"
-                                            className="mt-4"
-                                            onClick={startGame}
-                                            disabled={gameState.players.length === 0}
-                                        >
+                                        <Button size="lg" className="mt-4" onClick={startGame} disabled={!canStartGame}>
                                             Start Game
                                         </Button>
                                     </>

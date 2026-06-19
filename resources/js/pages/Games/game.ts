@@ -237,6 +237,15 @@ export function reducer(state: GameState, action: GameAction): GameState {
             return state;
         }
 
+        if (state.players.length === 0) {
+            return state;
+        }
+
+        const allPlayersHaveChosenBreed = state.players.every((p) => p.breed !== null);
+        if (!allPlayersHaveChosenBreed) {
+            return state;
+        }
+
         const resetPlayers = state.players.map((p) => {
             const initialDirection = 'right';
             const startXy = findAvailablePosition(state);
