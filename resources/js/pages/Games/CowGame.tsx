@@ -11,7 +11,7 @@ import { Scoreboard } from '@/pages/Games/ui/Scoreboard';
 import { Sprite } from '@/pages/Games/ui/Sprite';
 import { AnimatePresence, motion } from 'framer-motion';
 import Peer, { DataConnection } from 'peerjs';
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
 import { config } from './config';
 
@@ -28,6 +28,22 @@ const generateGrid = () => {
     }
     return cellsTemp;
 };
+
+const GrassGrid = memo(({ cells }: { cells: { rotation: string }[][] }) => {
+    return cells.map((row, y) => (
+        <div key={y} className="flex w-full flex-nowrap">
+            {row.map((cell, x) => (
+                <Sprite
+                    key={x}
+                    spriteKey="ground.grass"
+                    rotation={cell.rotation}
+                    className="flex items-center justify-center text-lg"
+                />
+            ))}
+        </div>
+    ));
+});
+GrassGrid.displayName = 'GrassGrid';
 
 export const CowGame = () => {
     const [joinCode, setJoinCode] = useState<string>();
@@ -194,18 +210,7 @@ export const CowGame = () => {
 
                 {/* Grid */}
                 <div className="relative bg-lime-900">
-                    {gameState.cells.map((row, y) => (
-                        <div key={y} className="flex w-full flex-nowrap">
-                            {row.map((cell, x) => (
-                                <Sprite
-                                    key={x}
-                                    spriteKey="ground.grass"
-                                    rotation={cell.rotation}
-                                    className="flex items-center justify-center text-lg"
-                                />
-                            ))}
-                        </div>
-                    ))}
+                    <GrassGrid cells={gameState.cells} />
                     {gameState.players.map(
                         (player) =>
                             isAlive(player) && (
