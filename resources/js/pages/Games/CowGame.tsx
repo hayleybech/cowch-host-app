@@ -12,7 +12,7 @@ import { Sprite } from '@/pages/Games/ui/Sprite';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Howl } from 'howler';
 import Peer, { DataConnection } from 'peerjs';
-import { memo, useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
 import { config } from './config';
 
@@ -307,7 +307,7 @@ export const CowGame = () => {
                                     y: [0, 0, 0, 0, -100],
                                 }}
                                 transition={{ duration: 3, times: [0, 0.1, 0.2, 0.8, 1] }}
-                                className="absolute top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2 transform rounded-lg px-8 py-4 text-4xl font-black text-red-600 shadow-2xl ring-4 text-shadow-lg"
+                                className="absolute top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2 transform px-8 py-4 text-4xl font-black text-red-600 shadow-2xl ring-4 text-shadow-lg"
                             >
                                 SUDDEN DEATH!
                             </motion.div>
@@ -318,13 +318,15 @@ export const CowGame = () => {
                             <div className="absolute top-0 right-0 bottom-0 left-0 bg-neutral-900 opacity-70" />
                             <div className="text-shadow z-15 flex flex-col items-center justify-center gap-2 text-2xl text-white">
                                 {gameState.winner ? (
-                                    <>
-                                        <div className="text-4xl">WINNER!</div>
-                                        <div className="text-5xl text-lime-400">{gameState.winner.username}</div>
-                                        <Button size="lg" className="mt-4" onClick={startGame}>
-                                            Play Again
-                                        </Button>
-                                    </>
+                                <>
+                                    <div className="text-4xl">WINNER!</div>
+                                    <div className="text-5xl text-lime-400 flex flex-row gap-2 items-center justify-center">
+                                        <Sprite spriteKey="icons.trophy" />Hayley
+                                    </div>
+                                    <Button size="lg" className="mt-4" onClick={startGame}>
+                                        Play Again
+                                    </Button>
+                                </>
                                 ) : gameState.resumeGracePeriodSeconds > 0 ? (
                                     <>
                                         <div>{gameState.hasStarted ? 'RESUMING' : 'STARTING'}</div>
