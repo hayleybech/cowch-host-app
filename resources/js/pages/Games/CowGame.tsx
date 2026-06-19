@@ -10,6 +10,7 @@ import { PowerupLegend } from '@/pages/Games/ui/PowerupLegend';
 import { Scoreboard } from '@/pages/Games/ui/Scoreboard';
 import { Sprite } from '@/pages/Games/ui/Sprite';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Howl } from 'howler';
 import Peer, { DataConnection } from 'peerjs';
 import { memo, useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
@@ -48,6 +49,8 @@ GrassGrid.displayName = 'GrassGrid';
 export const CowGame = () => {
     const [joinCode, setJoinCode] = useState<string>();
     const peerRef = useRef<Peer>(null);
+    const menuThemeRef = useRef<Howl>(null);
+    const mainThemeRef = useRef<Howl>(null);
 
     const [gameState, dispatch] = useReducer(reducer, {
         players: [],
@@ -69,6 +72,63 @@ export const CowGame = () => {
     useEffect(() => {
         gameStateRef.current = gameState;
     }, [gameState]);
+
+    useEffect(() => {
+        menuThemeRef.current = new Howl({
+            src: ['/audio/cowch-menu-2026-06-18.wav'],
+            loop: true,
+            volume: 0.5,
+        });
+
+        mainThemeRef.current = new Howl({
+            src: ['/audio/cowch-main-theme-2026-06-18.wav'],
+            loop: true,
+            volume: 0.5,
+        });
+
+        return () => {
+            menuThemeRef.current?.stop();
+            menuThemeRef.current?.unload();
+            mainThemeRef.current?.stop();
+            mainThemeRef.current?.unload();
+        };
+    }, []);
+
+    useEffect(() => {
+        const menuTheme = menuThemeRef.current;
+        const mainTheme = mainThemeRef.current;
+
+        if (!menuTheme || !mainTheme) return;
+
+        const shouldPlayMain =
+            (gameState.hasStarted || (!gameState.hasStarted && gameState.resumeGracePeriodSeconds > 0)) &&
+            !gameState.winner;
+
+        if (shouldPlayMain) {
+            if (menuTheme.playing()) {
+                menuTheme.stop();
+            }
+            if (!mainTheme.playing()) {
+                mainTheme.play();
+            }
+        } else {
+            if (mainTheme.playing()) {
+                mainTheme.stop();
+            }
+            if (!menuTheme.playing()) {
+                menuTheme.play();
+            }
+        }
+
+        if (gameState.isSuddenDeath) {
+            // TODO: handle sudden death music
+        }
+    }, [
+        gameState.hasStarted,
+        gameState.winner,
+        gameState.resumeGracePeriodSeconds,
+        gameState.isSuddenDeath,
+    ]);
 
     useEffect(() => {
         const savedJoinCode = localStorage.getItem('cowch-join-code');
