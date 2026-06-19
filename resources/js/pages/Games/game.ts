@@ -2,8 +2,8 @@ import { getWeightedRandomElement } from '@/lib/utils';
 import { config } from '@/pages/Games/config';
 import {
     dash,
-    getRandomPosition,
     getHitPiece,
+    getRandomPosition,
     getTail,
     grow,
     isAlive,
@@ -18,6 +18,7 @@ import {
 } from '@/pages/Games/cow';
 import {
     AlivePlayer,
+    CowBreed,
     CowBreeds,
     CowHead,
     CowMiddle,
@@ -30,52 +31,80 @@ import {
     Player,
     Position
 } from '@/pages/Games/types';
-import { DataConnection } from 'peerjs';
 import { Dispatch } from 'react';
 
 export function reducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'CONNECT_PLAYER') {
-        const existingPlayer = state.players.find((p) => p.uuid === action.payload.uuid);
-        const uuid = existingPlayer ? existingPlayer.uuid : action.payload.uuid;
+        const uuid = action.payload.uuid || crypto.randomUUID();
+        const existingPlayer = action.payload.uuid ? state.players.find((p) => p.uuid === uuid) : undefined;
 
-        const nextConnections = [...state.connections, action.payload.connection];
-        const nextPending = [
-            ...state.pendingConnections,
-            {
-                uuid: uuid,
-                peerId: action.payload.connection.peer,
-                username: action.payload.username,
-                connection: action.payload.connection,
-            },
-        ];
+        let nextPlayers = state.players;
+        if (existingPlayer) {
+            nextPlayers = state.players.map((p) =>
+                p.uuid === uuid ? { ...p, connection: action.payload.connection } : p
+            );
+        } else {
+            nextPlayers = [
+                ...state.players,
+                {
+                    uuid,
+                    peerId: action.payload.connection.peer,
+                    username: action.payload.username,
+                    connection: action.payload.connection,
+                    score: 0,
+                    isAlive: false,
+                    breed: null,
+                }
+            ];
+        }
 
-        const chosenBreeds = state.players.map((p) => p.breed);
+        const updatedState = { ...state, players: nextPlayers };
+
+        const chosenBreeds = nextPlayers.map((p) => p.breed).filter((b): b is CowBreed => b !== null);
         const availableBreeds = CowBreeds.filter((breed) => !chosenBreeds.includes(breed));
 
-        action.payload.connection.send({ type: 'connected', payload: uuid });
+        action.payload.connection.send({
+            type: 'connected',
+            payload: {
+                uuid,
+                availableBreeds,
+                selectedBreed: existingPlayer?.breed || null,
+                hasStarted: state.hasStarted,
+                isPaused: state.isPaused,
+                hasPowerup: existingPlayer && isAlive(existingPlayer) && !!existingPlayer.storedPowerup,
+                isAlive: existingPlayer ? isAlive(existingPlayer) : true,
+                hasEnded: state.winner !== null,
+                isWinner: state.winner?.username === action.payload.username,
+            }
+        });
+
         action.payload.connection.send({ type: 'player_joined', payload: availableBreeds });
         action.payload.connection.send({ type: state.isPaused ? 'paused' : 'resumed' });
 
-        return {
-            ...state,
-            connections: nextConnections,
-            pendingConnections: nextPending,
-        };
+        return updatedState;
     }
 
     if (action.type === 'JOIN_PLAYER') {
         const initialDirection = 'right';
-        const pending = state.pendingConnections.find((p) => p.uuid === action.payload.uuid);
-        if (!pending) {
+        const playerIndex = state.players.findIndex((p) => p.uuid === action.payload.uuid);
+        const player = state.players[playerIndex];
+
+        if (!player) {
+            return state;
+        }
+
+        if (player.breed !== null) {
+            broadcastTo(state, player.uuid, { type: 'cowch_error', payload: 'already joined' });
             return state;
         }
 
         const breedIsTaken = state.players.some((p) => p.breed === action.payload.breed);
         if (breedIsTaken) {
+            broadcastTo(state, player.uuid, { type: 'cowch_error', payload: 'breed taken' });
             return state;
         }
 
-        broadcastTo(state, pending.uuid, { type: 'joined', payload: { breed: action.payload.breed } });
+        broadcastTo(state, player.uuid, { type: 'joined', payload: { breed: action.payload.breed } });
 
         const startXy = findAvailablePosition(state);
 
@@ -103,10 +132,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
             dir: initialDirection,
             nextPiece: cowMiddle,
         };
-        const player: Player = {
-            uuid: pending.uuid,
-            peerId: pending.peerId,
-            username: pending.username,
+        const joinedPlayer: Player = {
+            ...player,
             headPiece: head,
             score: 0,
             isAlive: true,
@@ -114,15 +141,14 @@ export function reducer(state: GameState, action: GameAction): GameState {
             slowedTicks: 0,
             boostedTicks: 0,
             storedPowerup: null,
-        };
+        } as Player;
 
-        const nextPlayers = [...state.players, player];
-        const nextPending = state.pendingConnections.filter((p) => p.uuid !== action.payload.uuid);
+        const nextPlayers = state.players.map((p, i) => i === playerIndex ? joinedPlayer : p);
 
-        const chosenBreeds = nextPlayers.map((p) => p.breed);
+        const chosenBreeds = nextPlayers.map((p) => p.breed).filter((b): b is CowBreed => b !== null);
         const availableBreeds = CowBreeds.filter((breed) => !chosenBreeds.includes(breed));
 
-        broadcastToAll(state.connections, {
+        broadcastToAll(nextPlayers, {
             type: 'player_joined',
             payload: availableBreeds,
         });
@@ -130,7 +156,6 @@ export function reducer(state: GameState, action: GameAction): GameState {
         return {
             ...state,
             players: nextPlayers,
-            pendingConnections: nextPending,
         };
     }
 
@@ -268,7 +293,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         }
 
         if (!state.isPaused) {
-            broadcastToAll(state.connections, { type: 'paused' });
+            broadcastToAll(state.players, { type: 'paused' });
             return {
                 ...state,
                 isPaused: true,
@@ -287,7 +312,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'TICK_RESUME_COUNTDOWN') {
         const newValue = state.resumeGracePeriodSeconds - 1;
         if (newValue <= 0) {
-            broadcastToAll(state.connections, { type: state.hasStarted ? 'resumed' : 'started' });
+            broadcastToAll(state.players, { type: state.hasStarted ? 'resumed' : 'started' });
             return {
                 ...state,
                 isPaused: false,
@@ -565,16 +590,17 @@ const cowHasPieceInPosition = (piece: CowPiece, pos: Position) => {
     return cowHasPieceInPosition(piece.nextPiece, pos);
 }
 
-const broadcastToAll = (connections: DataConnection[], action: GameNotification) => {
-    connections.forEach((connection) => {
-        connection.send(action);
+const broadcastToAll = (players: Player[], action: GameNotification) => {
+    players.forEach((player) => {
+        player.connection.send(action);
     });
 };
 
 const broadcastTo = (state: GameState, uuid: string, action: GameNotification) => {
     const player = state.players.find((p) => p.uuid === uuid);
-    const peerId = player?.peerId || state.pendingConnections.find((p) => p.uuid === uuid)?.peerId;
-    state.connections.find((conn) => conn.peer === peerId)?.send(action);
+    if (player) {
+        player.connection.send(action);
+    }
 };
 
 export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
@@ -691,14 +717,14 @@ export function movePlayers(state: GameState, dispatch: Dispatch<GameAction>) {
             dispatch({ type: 'UPDATE_PLAYERS', payload: players }); // Ensure last death is recorded
             state.winner = alivePlayers[0];
             state.isPaused = true;
-            broadcastToAll(state.connections, {
+            broadcastToAll(players, {
                 type: 'game_over',
                 payload: { winner: state.winner.username },
             });
         } else if (alivePlayers.length === 0) {
             // Draw or everyone died at once
             state.isPaused = true;
-            broadcastToAll(state.connections, {
+            broadcastToAll(players, {
                 type: 'game_over',
                 payload: { winner: null },
             });

@@ -15,24 +15,29 @@ interface ScoreboardProps {
     dispatch: React.Dispatch<GameAction>;
 }
 
-export const Scoreboard: React.FC<ScoreboardProps> = ({
-    players,
-    honeyPatches,
-    milkPatches,
-    dispatch,
-}) => {
+export const Scoreboard: React.FC<ScoreboardProps> = ({ players, honeyPatches, milkPatches, dispatch }) => {
     return (
         <div>
             <ul className="flex flex-col gap-4">
                 {players.map((player) => (
                     <li key={player.uuid} className="flex justify-between gap-8">
                         <div className="flex gap-2">
-                            <CowAvatar breed={player.breed} />
+                            <div className="shrink-0">
+                                {player.breed ? (
+                                    <CowAvatar breed={player.breed} />
+                                ) : (
+                                    <div
+                                        style={{ width: config.cellSize * 2, height: config.cellSize }}
+                                        className="rounded bg-gray-800/50"
+                                    />
+                                )}
+                            </div>
 
                             <div className="flex flex-col">
                                 <div className="text-xl">
-                                    {player.username} {!player.isAlive && '(Dead)'}
+                                    {player.username} {player.breed && !player.isAlive && '(Dead)'}
                                 </div>
+                                {config.isDebugEnabled && <div className="text-lg">{player.uuid}</div>}
                                 {config.isDebugEnabled && isAlive(player) && (
                                     <Button
                                         variant={player.isFrozen ? 'primary' : 'secondary'}
@@ -64,11 +69,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
                             {isAlive(player) &&
                                 (player.slowedTicks > 0 ||
                                     honeyPatches.some((patch) =>
-                                        isCowInHoneyPatch(
-                                            player.headPiece,
-                                            patch.pos,
-                                            config.honeyPatchRadius,
-                                        ),
+                                        isCowInHoneyPatch(player.headPiece, patch.pos, config.honeyPatchRadius),
                                     )) && (
                                     <div className="flex items-center justify-center p-1">
                                         <Snail className="h-6 w-6 text-amber-600" />
@@ -77,11 +78,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
                             {isAlive(player) &&
                                 (player.boostedTicks > 0 ||
                                     milkPatches.some((patch) =>
-                                        isCowInMilkPatch(
-                                            player.headPiece,
-                                            patch.pos,
-                                            config.milkPatchRadius,
-                                        ),
+                                        isCowInMilkPatch(player.headPiece, patch.pos, config.milkPatchRadius),
                                     )) && (
                                     <div className="flex items-center justify-center p-1">
                                         <Zap className="h-6 w-6 text-blue-500" />

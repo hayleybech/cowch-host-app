@@ -56,8 +56,6 @@ export type GameState = {
     ticksSinceFood: number;
     isPaused: boolean;
     resumeGracePeriodSeconds: number;
-    connections: DataConnection[];
-    pendingConnections: PendingConnection[];
     clouds: Cloud[];
     honeyPatches: HoneyPatch[];
     milkPatches: MilkPatch[];
@@ -66,34 +64,31 @@ export type GameState = {
     winner: Player | null;
 };
 
-export type PendingConnection = {
-    uuid: string;
-    peerId: string;
-    username: string;
-    connection: DataConnection;
-};
 
 export type PlayerAction =
     | {
           type: 'connect';
           payload: {
+              uuid?: string;
               username: string;
           };
       }
     | {
           type: 'join';
+          uuid: string;
           payload: {
               breed: CowBreed;
           };
       }
     | {
           type: 'move';
+          uuid: string;
           payload: Direction;
       }
-    | { type: 'drop_powerup' }
-    | { type: 'use_powerup' }
-    | { type: 'pause' }
-    | { type: 'start_game' };
+    | { type: 'drop_powerup', uuid: string }
+    | { type: 'use_powerup', uuid: string }
+    | { type: 'pause', uuid: string }
+    | { type: 'start_game', uuid: string };
 
 export type GameNotification =
     | { type: 'died' }
@@ -102,15 +97,29 @@ export type GameNotification =
     | { type: 'started' }
     | { type: 'powerup_stored' }
     | { type: 'powerup_used' }
+    | { type: 'cowch_error', payload: string }
     | { type: 'joined'; payload: { breed: CowBreed } }
-    | { type: 'connected'; payload: string } // UUID
+    | {
+          type: 'connected';
+          payload: {
+              uuid: string;
+              availableBreeds: CowBreed[];
+              selectedBreed: CowBreed | null;
+              hasStarted: boolean;
+              isPaused: boolean;
+              hasPowerup: boolean;
+              isAlive: boolean;
+              hasEnded: boolean;
+              isWinner: boolean;
+          };
+      }
     | { type: 'game_over'; payload: { winner: string | null } }
     | { type: 'player_joined'; payload: CowBreed[] };
 
 export type GameAction =
     | {
           type: 'CONNECT_PLAYER';
-          payload: { uuid: string; username: string; connection: DataConnection };
+          payload: { uuid: string|undefined; username: string; connection: DataConnection };
       }
     | {
           type: 'JOIN_PLAYER';
@@ -133,6 +142,7 @@ export type AlivePlayer = {
     uuid: string;
     peerId: string;
     username: string;
+    connection: DataConnection;
     score: number;
     isAlive: true;
     headPiece: CowHead;
@@ -146,11 +156,21 @@ export type DeadPlayer = {
     uuid: string;
     peerId: string;
     username: string;
+    connection: DataConnection;
     score: number;
     isAlive: false;
     breed: CowBreed;
 };
-export type Player = AlivePlayer | DeadPlayer;
+export type PendingPlayer = {
+    uuid: string;
+    peerId: string;
+    username: string;
+    connection: DataConnection;
+    score: 0;
+    isAlive: false;
+    breed: null;
+};
+export type Player = AlivePlayer | DeadPlayer | PendingPlayer;
 
 export type CowBreed = keyof typeof sprites.cow;
 export const CowBreeds = Object.keys(sprites.cow) as CowBreed[];

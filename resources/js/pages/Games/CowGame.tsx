@@ -41,8 +41,6 @@ export const CowGame = () => {
         ticksSinceFood: 0,
         isPaused: true,
         resumeGracePeriodSeconds: 0,
-        connections: [],
-        pendingConnections: [],
         clouds: [],
         honeyPatches: [],
         milkPatches: [],
@@ -50,6 +48,11 @@ export const CowGame = () => {
         isSuddenDeath: false,
         winner: null,
     });
+
+    const gameStateRef = useRef(gameState);
+    useEffect(() => {
+        gameStateRef.current = gameState;
+    }, [gameState]);
 
     useEffect(() => {
         const savedJoinCode = localStorage.getItem('cowch-join-code');
@@ -63,15 +66,13 @@ export const CowGame = () => {
         });
 
         peer.on('connection', function (conn: DataConnection) {
-            const uuid = crypto.randomUUID();
-
             conn.on('data', function (data: unknown) {
                 const action = data as PlayerAction;
                 if (action.type === 'connect') {
                     dispatch({
                         type: 'CONNECT_PLAYER',
                         payload: {
-                            uuid,
+                            uuid: action.payload.uuid,
                             username:
                                 action.payload.username.length > 8
                                     ? action.payload.username.slice(0, 8)
@@ -85,7 +86,7 @@ export const CowGame = () => {
                     dispatch({
                         type: 'JOIN_PLAYER',
                         payload: {
-                            uuid,
+                            uuid: action.uuid,
                             breed: action.payload.breed,
                         },
                     });
@@ -93,29 +94,29 @@ export const CowGame = () => {
                 if (action.type === 'move') {
                     dispatch({
                         type: 'CHANGE_DIRECTION',
-                        payload: { uuid, direction: action.payload },
+                        payload: { uuid: action.uuid, direction: action.payload },
                     });
                 }
                 if (action.type === 'drop_powerup') {
                     dispatch({
                         type: 'DROP_TRAP',
-                        payload: { uuid },
+                        payload: { uuid: action.uuid },
                     });
                 }
                 if (action.type === 'use_powerup') {
                     dispatch({
                         type: 'APPLY_POWERUP',
-                        payload: { uuid },
+                        payload: { uuid: action.uuid },
                     });
                 }
                 if (action.type === 'pause') {
                     dispatch({
                         type: 'REQUEST_TOGGLE_PAUSE',
-                        payload: { uuid },
+                        payload: { uuid: action.uuid },
                     });
                 }
                 if (action.type === 'start_game') {
-                    if (!gameState.hasStarted || gameState.winner) {
+                    if (!gameStateRef.current.hasStarted || gameStateRef.current.winner) {
                         dispatch({ type: 'REQUEST_START_GAME' });
                     }
                 }
