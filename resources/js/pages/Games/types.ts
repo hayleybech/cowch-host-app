@@ -199,3 +199,12 @@ export type CowTail = {
     dir: Direction;
     nextPiece: undefined;
 };
+
+export type SpriteKey =
+    | `cow.${CowBreed}.head`
+    | `cow.${CowBreed}.middle`
+    | `cow.${CowBreed}.bend`
+    | `cow.${CowBreed}.tail`
+    | `cow.${CowBreed}.sideView`
+    | `food.${Food['type']}`
+    | 'ground.grass';

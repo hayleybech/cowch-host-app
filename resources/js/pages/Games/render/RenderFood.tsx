@@ -1,26 +1,21 @@
 import { Food } from '@/pages/Games/types';
 import classNames from 'classnames';
-import { config, getSpriteBgPos, spriteBgSize, sprites } from '@/pages/Games/config';
+import { config } from '@/pages/Games/config';
+import { Sprite } from '@/pages/Games/ui/Sprite';
 
 export const RenderFood = ({ food, className, isInline = false }: { food: Food; isInline?: boolean; className?: string }) => {
     return (
-        <div
+        <Sprite
+            spriteKey={`food.${food.type}`}
             className={classNames(className, !isInline && 'absolute flex items-center justify-center text-white')}
             style={{
-                height: config.cellSize,
-                width: config.cellSize,
                 ...(isInline
                     ? {}
                     : {
                           top: food.pos.y * config.cellSize,
                           left: food.pos.x * config.cellSize,
                       }),
-                backgroundImage: "url('/sprite.png')",
-                backgroundSize: spriteBgSize,
-                backgroundPosition: getSpriteBgPos(sprites.food[food.type]),
             }}
-        >
-            &nbsp;
-        </div>
+        />
     );
 };

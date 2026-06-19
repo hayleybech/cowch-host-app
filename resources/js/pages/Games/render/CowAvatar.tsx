@@ -1,16 +1,12 @@
 import { CowBreed } from '@/pages/Games/types';
-import { config, getSpriteBgPos, spriteBgSize, sprites } from '@/pages/Games/config';
+import { config } from '@/pages/Games/config';
+import { Sprite } from '@/pages/Games/ui/Sprite';
 
 export const CowAvatar = (props: { breed: CowBreed }) => (
-    <div
+    <Sprite
+        spriteKey={`cow.${props.breed}.sideView`}
         style={{
-            height: config.cellSize,
             width: config.cellSize * 2,
-            backgroundImage: "url('/sprite.png')",
-            backgroundSize: spriteBgSize,
-            backgroundPosition: getSpriteBgPos(sprites.cow[props.breed].sideView),
         }}
-    >
-        &nbsp;
-    </div>
+    />
 );

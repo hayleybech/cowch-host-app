@@ -8,12 +8,12 @@ import { PlayerAction } from '@/pages/Games/types';
 import { Button } from '@/pages/Games/ui/Button';
 import { PowerupLegend } from '@/pages/Games/ui/PowerupLegend';
 import { Scoreboard } from '@/pages/Games/ui/Scoreboard';
-import classNames from 'classnames';
+import { Sprite } from '@/pages/Games/ui/Sprite';
 import { AnimatePresence, motion } from 'framer-motion';
 import Peer, { DataConnection } from 'peerjs';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
-import { config, getSpriteBgPos, spriteBgSize, sprites } from './config';
+import { config } from './config';
 
 const generateGrid = () => {
     const cellsTemp = [];
@@ -197,24 +197,12 @@ export const CowGame = () => {
                     {gameState.cells.map((row, y) => (
                         <div key={y} className="flex w-full flex-nowrap">
                             {row.map((cell, x) => (
-                                <div
+                                <Sprite
                                     key={x}
-                                    style={{
-                                        width: config.cellSize,
-                                        height: config.cellSize,
-                                        backgroundImage: "url('/sprite.png')",
-                                        backgroundSize: spriteBgSize,
-                                        backgroundPosition: getSpriteBgPos(sprites.ground.grass),
-                                    }}
-                                    className={classNames(
-                                        'flex items-center justify-center text-lg',
-                                        cell.rotation,
-                                        // x < row.length - 1 && 'border-r-0',
-                                        // y < gameState.cells.length - 1 && 'border-b-0',
-                                    )}
-                                >
-                                    &nbsp;
-                                </div>
+                                    spriteKey="ground.grass"
+                                    rotation={cell.rotation}
+                                    className="flex items-center justify-center text-lg"
+                                />
                             ))}
                         </div>
                     ))}

@@ -239,3 +239,12 @@ export const spriteBgSize = `${sprites.cellSize * sprites.pixelRatio} ${sprites.
 export const getSpriteBgPos = (sprite: { x: number; y: number }) =>
     `${-sprite.x * sprites.pixelRatio * sprites.cellSize}px ` +
     `${-sprite.y * sprites.pixelRatio * sprites.cellSize}px`;
+
+export const getSpriteFromKey = (key: string) => {
+    const parts = key.split('.');
+    let current: unknown = sprites;
+    for (const part of parts) {
+        current = (current as Record<string, unknown>)[part];
+    }
+    return current as { x: number; y: number };
+};
