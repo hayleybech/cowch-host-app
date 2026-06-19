@@ -75,6 +75,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
                 isAlive: existingPlayer ? isAlive(existingPlayer) : true,
                 hasEnded: state.winner !== null,
                 isWinner: state.winner?.username === action.payload.username,
+                winner: state.winner ?? null,
             }
         });
 

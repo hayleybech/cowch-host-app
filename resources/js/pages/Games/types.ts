@@ -111,6 +111,7 @@ export type GameNotification =
               isAlive: boolean;
               hasEnded: boolean;
               isWinner: boolean;
+              winner: string | null;
           };
       }
     | { type: 'game_over'; payload: { winner: string | null } }
