@@ -207,4 +207,5 @@ export type SpriteKey =
     | `cow.${CowBreed}.tail`
     | `cow.${CowBreed}.sideView`
     | `food.${Food['type']}`
+    | `icons.${keyof typeof sprites.icons}`
     | 'ground.grass';

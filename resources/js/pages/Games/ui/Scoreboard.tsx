@@ -3,8 +3,8 @@ import { CowAvatar } from '@/pages/Games/render/CowAvatar';
 import { RenderFood } from '@/pages/Games/render/RenderFood';
 import { GameAction, HoneyPatch, MilkPatch, Player } from '@/pages/Games/types';
 import { Button } from '@/pages/Games/ui/Button';
+import { Sprite } from '@/pages/Games/ui/Sprite';
 import classNames from 'classnames';
-import { Snail, Zap } from 'lucide-react';
 import React from 'react';
 import { config } from '../config';
 
@@ -34,9 +34,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ players, honeyPatches, m
                             </div>
 
                             <div className="flex flex-col">
-                                <div className="text-xl">
-                                    {player.username} {player.breed && !player.isAlive && '(Dead)'}
-                                </div>
+                                <div className="text-xl">{player.username}</div>
                                 {config.isDebugEnabled && <div className="text-lg">{player.uuid}</div>}
                                 {config.isDebugEnabled && isAlive(player) && (
                                     <Button
@@ -66,24 +64,17 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ players, honeyPatches, m
                                     <RenderFood food={player.storedPowerup} isInline />
                                 )}
                             </div>
+                            {player.breed && !player.isAlive && <Sprite spriteKey="icons.skull" />}
                             {isAlive(player) &&
                                 (player.slowedTicks > 0 ||
                                     honeyPatches.some((patch) =>
                                         isCowInHoneyPatch(player.headPiece, patch.pos, config.honeyPatchRadius),
-                                    )) && (
-                                    <div className="flex items-center justify-center p-1">
-                                        <Snail className="h-6 w-6 text-amber-600" />
-                                    </div>
-                                )}
+                                    )) && <Sprite spriteKey="icons.snail" />}
                             {isAlive(player) &&
                                 (player.boostedTicks > 0 ||
                                     milkPatches.some((patch) =>
                                         isCowInMilkPatch(player.headPiece, patch.pos, config.milkPatchRadius),
-                                    )) && (
-                                    <div className="flex items-center justify-center p-1">
-                                        <Zap className="h-6 w-6 text-blue-500" />
-                                    </div>
-                                )}
+                                    )) && <Sprite spriteKey="icons.lightning" />}
                         </div>
                         <div className="text-xl">{player.score}</div>
                     </li>

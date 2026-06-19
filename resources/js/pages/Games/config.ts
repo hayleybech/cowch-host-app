@@ -232,6 +232,36 @@ export const sprites = {
             },
         },
     },
+    icons: {
+        chevron: {
+            x: 8,
+            y: 0
+        },
+        landscape: {
+            x: 7,
+            y: 5,
+        },
+        landscape_dark: {
+            x: 7,
+            y: 7,
+        },
+        snail: {
+            x: 8,
+            y: 0,
+        },
+        lightning: {
+            x: 9,
+            y: 0,
+        },
+        skull: {
+            x: 8,
+            y: 1,
+        },
+        trophy: {
+            x: 9,
+            y: 1,
+        }
+    }
 } as const;
 
 export const spriteBgSize = `${sprites.cellSize * sprites.pixelRatio} ${sprites.cellSize * sprites.pixelRatio}`;
